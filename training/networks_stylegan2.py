@@ -230,8 +230,8 @@ class MappingNetwork(torch.nn.Module):
 
     def forward(self, z, c, truncation_psi=1, truncation_cutoff=None, update_emas=False):
         # Embed, normalize, and concat inputs.
-        # mod
-        print(z)
+        # modify
+        print('z shape: ', z.size())
         x = None
         with torch.autograd.profiler.record_function('input'):
             if self.z_dim > 0:
@@ -428,11 +428,11 @@ class SynthesisBlock(torch.nn.Module):
             fused_modconv = (not self.training)
 
         # Input.
-        # mod
+        # modify
         if self.in_channels == 0:
             x = self.const.to(dtype=dtype, memory_format=memory_format)
             x = x.unsqueeze(0).repeat([ws.shape[0], 1, 1, 1])
-            print(x)
+            print('x shape: ', x.size())
         else:
             misc.assert_shape(x, [None, self.in_channels, self.resolution // 2, self.resolution // 2])
             x = x.to(dtype=dtype, memory_format=memory_format)
