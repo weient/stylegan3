@@ -11,7 +11,7 @@
 import os
 import numpy as np
 import torch
-from ... import dnnlib
+import dnnlib
 #import dnnlib
 
 from .. import custom_ops

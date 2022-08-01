@@ -20,7 +20,7 @@ import inspect
 import copy
 import uuid
 import types
-from .. import dnnlib
+import dnnlib
 #import dnnlib
 
 #----------------------------------------------------------------------------
