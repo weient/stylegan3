@@ -14,12 +14,12 @@ https://github.com/NVlabs/stylegan2/blob/master/training/networks_stylegan2.py""
 import numpy as np
 import torch
 # modify folder
-from ..torch_utils import misc
-from ..torch_utils import persistence
-from ..torch_utils.ops import conv2d_resample
-from ..torch_utils.ops import upfirdn2d
-from ..torch_utils.ops import bias_act
-from ..torch_utils.ops import fma
+from torch_utils import misc
+from torch_utils import persistence
+from torch_utils.ops import conv2d_resample
+from torch_utils.ops import upfirdn2d
+from torch_utils.ops import bias_act
+from torch_utils.ops import fma
 
 #----------------------------------------------------------------------------
 
@@ -266,6 +266,7 @@ class MappingNetwork(torch.nn.Module):
                     x = self.w_avg.lerp(x, truncation_psi)
                 else:
                     x[:, :truncation_cutoff] = self.w_avg.lerp(x[:, :truncation_cutoff], truncation_psi)
+        print('output of mapping network: ', x)
         return x
 
     def extra_repr(self):
