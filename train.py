@@ -49,7 +49,7 @@ def subprocess_fn(rank, c, temp_dir):
 #----------------------------------------------------------------------------
 
 def launch_training(c, desc, outdir, dry_run):
-    dnnlib.util.Logger(should_flush=True)
+    #dnnlib.util.Logger(should_flush=True)
 
     # Pick output directory.
     prev_run_dirs = []
