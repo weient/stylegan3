@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
-from basic_module import *
+from .basic_module import *
 
 class ResidualBlock(nn.Module):
     '''
