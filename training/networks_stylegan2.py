@@ -23,13 +23,13 @@ from ..torch_utils.ops import fma
 
 #----------------------------------------------------------------------------
 
-@misc.profiled_function
+#@misc.profiled_function
 def normalize_2nd_moment(x, dim=1, eps=1e-8):
     return x * (x.square().mean(dim=dim, keepdim=True) + eps).rsqrt()
 
 #----------------------------------------------------------------------------
 
-@misc.profiled_function
+#@misc.profiled_function
 def modulated_conv2d(
     x,                          # Input tensor of shape [batch_size, in_channels, in_height, in_width].
     weight,                     # Weight tensor of shape [out_channels, in_channels, kernel_height, kernel_width].
@@ -91,7 +91,7 @@ def modulated_conv2d(
 
 #----------------------------------------------------------------------------
 
-@persistence.persistent_class
+#@persistence.persistent_class
 class FullyConnectedLayer(torch.nn.Module):
     def __init__(self,
         in_features,                # Number of input features.
@@ -130,7 +130,7 @@ class FullyConnectedLayer(torch.nn.Module):
 
 #----------------------------------------------------------------------------
 
-@persistence.persistent_class
+#@persistence.persistent_class
 class Conv2dLayer(torch.nn.Module):
     def __init__(self,
         in_channels,                    # Number of input channels.
@@ -188,7 +188,7 @@ class Conv2dLayer(torch.nn.Module):
 
 #----------------------------------------------------------------------------
 
-@persistence.persistent_class
+#@persistence.persistent_class
 class MappingNetwork(torch.nn.Module):
     def __init__(self,
         z_dim,                      # Input latent (Z) dimensionality, 0 = no latent.
@@ -274,7 +274,7 @@ class MappingNetwork(torch.nn.Module):
 
 #----------------------------------------------------------------------------
 
-@persistence.persistent_class
+#@persistence.persistent_class
 class SynthesisLayer(torch.nn.Module):
     def __init__(self,
         in_channels,                    # Number of input channels.
@@ -338,7 +338,7 @@ class SynthesisLayer(torch.nn.Module):
 
 #----------------------------------------------------------------------------
 
-@persistence.persistent_class
+#@persistence.persistent_class
 class ToRGBLayer(torch.nn.Module):
     def __init__(self, in_channels, out_channels, w_dim, kernel_size=1, conv_clamp=None, channels_last=False):
         super().__init__()
@@ -471,7 +471,7 @@ class SynthesisBlock(torch.nn.Module):
 
 #----------------------------------------------------------------------------
 
-@persistence.persistent_class
+#@persistence.persistent_class
 class SynthesisNetwork(torch.nn.Module):
     def __init__(self,
         encoder_out,
