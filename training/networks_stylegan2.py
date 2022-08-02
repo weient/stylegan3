@@ -232,7 +232,7 @@ class MappingNetwork(torch.nn.Module):
     def forward(self, z, c, truncation_psi=1, truncation_cutoff=None, update_emas=False):
         # Embed, normalize, and concat inputs.
         # modify
-        print('z shape: ', z.size())
+        #print('z shape: ', z.size())
         x = None
         with torch.autograd.profiler.record_function('input'):
             if self.z_dim > 0:
@@ -266,7 +266,7 @@ class MappingNetwork(torch.nn.Module):
                     x = self.w_avg.lerp(x, truncation_psi)
                 else:
                     x[:, :truncation_cutoff] = self.w_avg.lerp(x[:, :truncation_cutoff], truncation_psi)
-        print('output of mapping network: ', x)
+        #print('output of mapping network: ', x)
         return x
 
     def extra_repr(self):
@@ -430,11 +430,10 @@ class SynthesisBlock(torch.nn.Module):
             fused_modconv = (not self.training)
 
         # Input.
-        # modify
         if self.in_channels == 0:
             x = self.const.to(dtype=dtype, memory_format=memory_format)
             x = x.unsqueeze(0).repeat([ws.shape[0], 1, 1, 1])
-            print('x shape: ', x.size())
+            #print('x shape: ', x.size())
         else:
             misc.assert_shape(x, [None, self.in_channels, self.resolution // 2, self.resolution // 2])
             x = x.to(dtype=dtype, memory_format=memory_format)
@@ -552,6 +551,7 @@ class Generator(torch.nn.Module):
 
     def forward(self, z, c, truncation_psi=1, truncation_cutoff=None, update_emas=False, **synthesis_kwargs):
         ws = self.mapping(z, c, truncation_psi=truncation_psi, truncation_cutoff=truncation_cutoff, update_emas=update_emas)
+        #print("self.num_ws: ", self.num_ws)
         img = self.synthesis(ws, update_emas=update_emas, **synthesis_kwargs)
         return img
 
