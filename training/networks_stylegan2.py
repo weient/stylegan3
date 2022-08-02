@@ -363,7 +363,7 @@ class ToRGBLayer(torch.nn.Module):
 
 #----------------------------------------------------------------------------
 
-@persistence.persistent_class
+#@persistence.persistent_class
 class SynthesisBlock(torch.nn.Module):
     def __init__(self,
         encoder_out,                            # output of content encoder
