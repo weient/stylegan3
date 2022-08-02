@@ -366,6 +366,7 @@ class ToRGBLayer(torch.nn.Module):
 @persistence.persistent_class
 class SynthesisBlock(torch.nn.Module):
     def __init__(self,
+        encoder_out,                            # output of content encoder
         in_channels,                            # Number of input channels, 0 = first block.
         out_channels,                           # Number of output channels.
         w_dim,                                  # Intermediate latent (W) dimensionality.
@@ -396,7 +397,9 @@ class SynthesisBlock(torch.nn.Module):
         self.num_torgb = 0
 
         if in_channels == 0:
-            self.const = torch.nn.Parameter(torch.randn([out_channels, resolution, resolution]))
+            self.const = encoder_out # should be 512x4x4
+        #    print('first layer output channel: ', out_channels)
+        #    self.const = torch.nn.Parameter(torch.randn([out_channels, resolution, resolution]))
 
         if in_channels != 0:
             self.conv0 = SynthesisLayer(in_channels, out_channels, w_dim=w_dim, resolution=resolution, up=2,
@@ -433,7 +436,7 @@ class SynthesisBlock(torch.nn.Module):
         if self.in_channels == 0:
             x = self.const.to(dtype=dtype, memory_format=memory_format)
             x = x.unsqueeze(0).repeat([ws.shape[0], 1, 1, 1])
-            #print('x shape: ', x.size())
+            print('x shape: ', x.size())
         else:
             misc.assert_shape(x, [None, self.in_channels, self.resolution // 2, self.resolution // 2])
             x = x.to(dtype=dtype, memory_format=memory_format)
@@ -471,6 +474,7 @@ class SynthesisBlock(torch.nn.Module):
 @persistence.persistent_class
 class SynthesisNetwork(torch.nn.Module):
     def __init__(self,
+        encoder_out,
         w_dim,                      # Intermediate latent (W) dimensionality.
         img_resolution,             # Output image resolution.
         img_channels,               # Number of color channels.
@@ -487,6 +491,7 @@ class SynthesisNetwork(torch.nn.Module):
         self.img_channels = img_channels
         self.num_fp16_res = num_fp16_res
         self.block_resolutions = [2 ** i for i in range(2, self.img_resolution_log2 + 1)]
+        print('block resolutions: ', self.block_resolutions)
         channels_dict = {res: min(channel_base // res, channel_max) for res in self.block_resolutions}
         fp16_resolution = max(2 ** (self.img_resolution_log2 + 1 - num_fp16_res), 8)
 
@@ -496,7 +501,7 @@ class SynthesisNetwork(torch.nn.Module):
             out_channels = channels_dict[res]
             use_fp16 = (res >= fp16_resolution)
             is_last = (res == self.img_resolution)
-            block = SynthesisBlock(in_channels, out_channels, w_dim=w_dim, resolution=res,
+            block = SynthesisBlock(encoder_out, in_channels, out_channels, w_dim=w_dim, resolution=res,
                 img_channels=img_channels, is_last=is_last, use_fp16=use_fp16, **block_kwargs)
             self.num_ws += block.num_conv
             if is_last:
