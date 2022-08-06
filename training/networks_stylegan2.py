@@ -367,7 +367,7 @@ class ToRGBLayer(torch.nn.Module):
 #@persistence.persistent_class
 class SynthesisBlock(torch.nn.Module):
     def __init__(self,
-        encoder_out,                            # output of content encoder
+                                   # output of content encoder
         in_channels,                            # Number of input channels, 0 = first block.
         out_channels,                           # Number of output channels.
         w_dim,                                  # Intermediate latent (W) dimensionality.
@@ -397,8 +397,8 @@ class SynthesisBlock(torch.nn.Module):
         self.num_conv = 0
         self.num_torgb = 0
 
-        if in_channels == 0:
-            self.const = encoder_out # should be 512x4x4
+        #if in_channels == 0:
+        #    self.const = encoder_out # should be 512x4x4
         #    print('first layer output channel: ', out_channels)
         #    self.const = torch.nn.Parameter(torch.randn([out_channels, resolution, resolution]))
 
@@ -420,7 +420,7 @@ class SynthesisBlock(torch.nn.Module):
             self.skip = Conv2dLayer(in_channels, out_channels, kernel_size=1, bias=False, up=2,
                 resample_filter=resample_filter, channels_last=self.channels_last)
 
-    def forward(self, x, img, ws, force_fp32=False, fused_modconv=None, update_emas=False, **layer_kwargs):
+    def forward(self, encoder_out, x, img, ws, force_fp32=False, fused_modconv=None, update_emas=False, **layer_kwargs):
         _ = update_emas # unused
         misc.assert_shape(ws, [None, self.num_conv + self.num_torgb, self.w_dim])
         w_iter = iter(ws.unbind(dim=1))
@@ -435,8 +435,8 @@ class SynthesisBlock(torch.nn.Module):
 
         # Input.
         if self.in_channels == 0:
-            x = self.const.to(dtype=dtype, memory_format=memory_format)
-            x = x.unsqueeze(0).repeat([ws.shape[0], 1, 1, 1])
+            x = encoder_out
+            #x = x.unsqueeze(0).repeat([ws.shape[0], 1, 1, 1])
             print('x shape: ', x.size())
         else:
             misc.assert_shape(x, [None, self.in_channels, self.resolution // 2, self.resolution // 2])
@@ -475,7 +475,6 @@ class SynthesisBlock(torch.nn.Module):
 #@persistence.persistent_class
 class SynthesisNetwork(torch.nn.Module):
     def __init__(self,
-        encoder_out,
         w_dim,                      # Intermediate latent (W) dimensionality.
         img_resolution,             # Output image resolution.
         img_channels,               # Number of color channels.
@@ -502,14 +501,14 @@ class SynthesisNetwork(torch.nn.Module):
             out_channels = channels_dict[res]
             use_fp16 = (res >= fp16_resolution)
             is_last = (res == self.img_resolution)
-            block = SynthesisBlock(encoder_out, in_channels, out_channels, w_dim=w_dim, resolution=res,
+            block = SynthesisBlock(in_channels, out_channels, w_dim=w_dim, resolution=res,
                 img_channels=img_channels, is_last=is_last, use_fp16=use_fp16, **block_kwargs)
             self.num_ws += block.num_conv
             if is_last:
                 self.num_ws += block.num_torgb
             setattr(self, f'b{res}', block)
 
-    def forward(self, ws, **block_kwargs):
+    def forward(self, encoder_out, ws, **block_kwargs):
         block_ws = []
         with torch.autograd.profiler.record_function('split_ws'):
             misc.assert_shape(ws, [None, self.num_ws, self.w_dim])
@@ -523,7 +522,7 @@ class SynthesisNetwork(torch.nn.Module):
         x = img = None
         for res, cur_ws in zip(self.block_resolutions, block_ws):
             block = getattr(self, f'b{res}')
-            x, img = block(x, img, cur_ws, **block_kwargs)
+            x, img = block(encoder_out, x, img, cur_ws, **block_kwargs)
         return img
 
     def extra_repr(self):
@@ -537,8 +536,6 @@ class SynthesisNetwork(torch.nn.Module):
 #@persistence.persistent_class
 class Generator(torch.nn.Module):
     def __init__(self,
-        img_text,
-        img_style,
         img_resolution,             # Output resolution.
         img_channels,               # Number of output color channels.
         z_dim       = 512,                      # Input latent (Z) dimensionality.
@@ -554,16 +551,18 @@ class Generator(torch.nn.Module):
         self.img_resolution = img_resolution
         self.img_channels = img_channels
         self.style_encoder = style_encoder()
-        self.style_out = self.style_encoder(img_style)
+        #self.style_out = self.style_encoder(img_style)
         self.content_encoder = content_encoder()
-        self.content_out = self.content_encoder(img_text)
+        #self.content_out = self.content_encoder(img_text)
         self.synthesis = SynthesisNetwork(self.content_out, w_dim=w_dim, img_resolution=img_resolution, img_channels=img_channels, **synthesis_kwargs)
         self.num_ws = self.synthesis.num_ws
         self.mapping = MappingNetwork(z_dim=z_dim, c_dim=c_dim, w_dim=w_dim, num_ws=self.num_ws, **mapping_kwargs)
 
-    def forward(self, c, truncation_psi=1, truncation_cutoff=None, update_emas=False, **synthesis_kwargs):
-        ws = self.mapping(self.style_out, c, truncation_psi=truncation_psi, truncation_cutoff=truncation_cutoff, update_emas=update_emas)
-        img = self.synthesis(ws, update_emas=update_emas, **synthesis_kwargs)
+    def forward(self, img_style, img_text, c, truncation_psi=1, truncation_cutoff=None, update_emas=False, **synthesis_kwargs):
+        style_out = self.style_encoder(img_style)
+        content_out = self.content_encoder(img_text)
+        ws = self.mapping(style_out, c, truncation_psi=truncation_psi, truncation_cutoff=truncation_cutoff, update_emas=update_emas)
+        img = self.synthesis(content_out, ws, update_emas=update_emas, **synthesis_kwargs)
         return img
 
 #----------------------------------------------------------------------------
