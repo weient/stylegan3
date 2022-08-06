@@ -554,7 +554,7 @@ class Generator(torch.nn.Module):
         #self.style_out = self.style_encoder(img_style)
         self.content_encoder = content_encoder()
         #self.content_out = self.content_encoder(img_text)
-        self.synthesis = SynthesisNetwork(self.content_out, w_dim=w_dim, img_resolution=img_resolution, img_channels=img_channels, **synthesis_kwargs)
+        self.synthesis = SynthesisNetwork(w_dim=w_dim, img_resolution=img_resolution, img_channels=img_channels, **synthesis_kwargs)
         self.num_ws = self.synthesis.num_ws
         self.mapping = MappingNetwork(z_dim=z_dim, c_dim=c_dim, w_dim=w_dim, num_ws=self.num_ws, **mapping_kwargs)
 
