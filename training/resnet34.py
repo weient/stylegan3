@@ -30,7 +30,7 @@ class content_encoder(BasicModule):
     用子module来实现Residual block，用_make_layer函数来实现layer
     '''
     def __init__(self):
-        super(ResNet34, self).__init__()
+        super(content_encoder, self).__init__()
         self.model_name = 'resnet34'
 
         # 前几层: 图像转换
@@ -84,7 +84,7 @@ class style_encoder(BasicModule):
     用子module来实现Residual block，用_make_layer函数来实现layer
     '''
     def __init__(self):
-        super(ResNet34, self).__init__()
+        super(style_encoder, self).__init__()
         self.model_name = 'resnet34'
 
         # 前几层: 图像转换
