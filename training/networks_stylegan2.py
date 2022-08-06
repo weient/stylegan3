@@ -542,7 +542,7 @@ class Generator(torch.nn.Module):
         img_resolution,             # Output resolution.
         img_channels,               # Number of output color channels.
         z_dim       = 512,                      # Input latent (Z) dimensionality.
-        c_dim       = None,                      # Conditioning label (C) dimensionality.
+        c_dim       = 0,                      # Conditioning label (C) dimensionality.
         w_dim       = 512,                      # Intermediate latent (W) dimensionality.
         mapping_kwargs      = {},   # Arguments for MappingNetwork.
         **synthesis_kwargs,         # Arguments for SynthesisNetwork.
