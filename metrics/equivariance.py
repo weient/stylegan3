@@ -13,7 +13,7 @@ import copy
 import numpy as np
 import torch
 import torch.fft
-from torch_utils.ops import upfirdn2d
+from ..torch_utils.ops import upfirdn2d
 from . import metric_utils
 
 #----------------------------------------------------------------------------
