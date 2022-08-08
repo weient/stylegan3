@@ -16,7 +16,7 @@ import copy
 import uuid
 import numpy as np
 import torch
-import dnnlib
+from .. import dnnlib
 
 #----------------------------------------------------------------------------
 
