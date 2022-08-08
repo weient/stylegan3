@@ -378,18 +378,19 @@ def training_loop(
                     pickle.dump(snapshot_data, f)
 
         # Evaluate metrics.
-        if (snapshot_data is not None) and (len(metrics) > 0):
-            if rank == 0:
-                print('Evaluating metrics...')
-            for metric in metrics:
-                result_dict = metric_main.calc_metric(metric=metric, G=snapshot_data['G_ema'],
-                    dataset_kwargs=training_set_kwargs, num_gpus=num_gpus, rank=rank, device=device)
-                if rank == 0:
-                    metric_main.report_metric(result_dict, run_dir=run_dir, snapshot_pkl=snapshot_pkl)
-                stats_metrics.update(result_dict.results)
-        del snapshot_data # conserve memory
+        #if (snapshot_data is not None) and (len(metrics) > 0):
+        #    if rank == 0:
+        #        print('Evaluating metrics...')
+        #    for metric in metrics:
+        #        result_dict = metric_main.calc_metric(metric=metric, G=snapshot_data['G_ema'],
+        #            dataset_kwargs=training_set_kwargs, num_gpus=num_gpus, rank=rank, device=device)
+        #        if rank == 0:
+        #            metric_main.report_metric(result_dict, run_dir=run_dir, snapshot_pkl=snapshot_pkl)
+        #        stats_metrics.update(result_dict.results)
+        #del snapshot_data # conserve memory
 
         # Collect statistics.
+        '''
         for phase in phases:
             value = []
             if (phase.start_event is not None) and (phase.end_event is not None):
@@ -415,6 +416,7 @@ def training_loop(
             stats_tfevents.flush()
         if progress_fn is not None:
             progress_fn(cur_nimg // 1000, total_kimg)
+        '''
 
         # Update state.
         cur_tick += 1
