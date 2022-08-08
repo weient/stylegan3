@@ -44,6 +44,8 @@ def subprocess_fn(rank, c, temp_dir):
         custom_ops.verbosity = 'none'
 
     # Execute training loop.
+    print("rank: ", rank)
+    print("**c: ", c)
     training_loop.training_loop(rank=rank, **c)
 
 #----------------------------------------------------------------------------
