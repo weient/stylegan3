@@ -422,6 +422,7 @@ class SynthesisBlock(torch.nn.Module):
 
     def forward(self, encoder_out, x, img, ws, force_fp32=False, fused_modconv=None, update_emas=False, **layer_kwargs):
         print("enter synthesis block: ")
+        print("architecture: ", self.architecture)
         _ = update_emas # unused
         misc.assert_shape(ws, [None, self.num_conv + self.num_torgb, self.w_dim])
         w_iter = iter(ws.unbind(dim=1))
