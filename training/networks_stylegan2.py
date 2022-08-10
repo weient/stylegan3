@@ -495,7 +495,7 @@ class SynthesisNetwork(torch.nn.Module):
         self.img_channels = img_channels
         self.num_fp16_res = num_fp16_res
         self.block_resolutions = [2 ** i for i in range(2, self.img_resolution_log2 + 1)]
-        print('block resolutions: ', self.block_resolutions)
+        #print('block resolutions: ', self.block_resolutions)
         channels_dict = {res: min(channel_base // res, channel_max) for res in self.block_resolutions}
         fp16_resolution = max(2 ** (self.img_resolution_log2 + 1 - num_fp16_res), 8)
 
@@ -513,7 +513,7 @@ class SynthesisNetwork(torch.nn.Module):
             setattr(self, f'b{res}', block)
 
     def forward(self, encoder_out, ws, **block_kwargs):
-        print("w shape: ", ws.size())
+        #print("w shape: ", ws.size())
         block_ws = []
         with torch.autograd.profiler.record_function('split_ws'):
             misc.assert_shape(ws, [None, self.num_ws, self.w_dim])
