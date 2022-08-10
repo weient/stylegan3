@@ -526,7 +526,7 @@ class SynthesisNetwork(torch.nn.Module):
         x = img = None
         for res, cur_ws in zip(self.block_resolutions, block_ws):
             block = getattr(self, f'b{res}')
-            print("cur_ws: ", cur_ws)
+            print("cur_ws: ", cur_ws.size())
             x, img = block(encoder_out, x, img, cur_ws, **block_kwargs)
         return img
 
