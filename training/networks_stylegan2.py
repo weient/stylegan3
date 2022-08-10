@@ -422,7 +422,7 @@ class SynthesisBlock(torch.nn.Module):
 
     def forward(self, encoder_out, x, img, ws, force_fp32=False, fused_modconv=None, update_emas=False, **layer_kwargs):
         print("enter synthesis block: ")
-        print("architecture: ", self.architecture)
+        print("is_last: ", self.is_last)
         _ = update_emas # unused
         misc.assert_shape(ws, [None, self.num_conv + self.num_torgb, self.w_dim])
         w_iter = iter(ws.unbind(dim=1))
@@ -457,7 +457,7 @@ class SynthesisBlock(torch.nn.Module):
         else:
             x = self.conv0(x, next(w_iter), fused_modconv=fused_modconv, **layer_kwargs)
             x = self.conv1(x, next(w_iter), fused_modconv=fused_modconv, **layer_kwargs)
-            print("in block: main layers 2")
+            print("in block: main layers 3")
         # ToRGB.
         if img is not None:
             misc.assert_shape(img, [None, self.img_channels, self.resolution // 2, self.resolution // 2])
