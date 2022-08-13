@@ -86,8 +86,8 @@ class content_encoder(BasicModule):
         x = self.sub3(x)
         x = self.layer4(x)
         x = self.sub4(x)
-        avg = nn.AvgPool2d(2)  
-        x = avg(x)
+        #avg = nn.AvgPool2d(4)  
+        #x = avg(x)
         return x
 
 class style_encoder(BasicModule):
@@ -155,7 +155,7 @@ class style_encoder(BasicModule):
         x = self.sub3(x)
         x = self.layer4(x)
         x = self.sub4(x)
-        avg = nn.AvgPool2d(8)  
+        avg = nn.AvgPool2d(16)  
         x = avg(x)  # reduce dimension to [1, 512, 1, 1]
         x = x.view(x.size(0), -1) # flatten tensor to [1, 512]
         return x
