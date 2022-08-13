@@ -33,21 +33,32 @@ class content_encoder(BasicModule):
         super(content_encoder, self).__init__()
         self.model_name = 'resnet34'
 
-        # 前几层: 图像转换
         self.pre = nn.Sequential(
-                nn.Conv2d(3, 64, 7, 2, 3, bias=False),
+                nn.Conv2d(3, 32, 3, 1, 1),
+                nn.BatchNorm2d(32),
+                nn.Conv2d(32, 64, 3, 1, 1),
                 nn.BatchNorm2d(64),
                 nn.ReLU(inplace=True),
-                nn.MaxPool2d(3, 2, 1))
+                nn.MaxPool2d(2, 2))
         
         # 重复的layer，分别有3，4，6，3个residual block
-        self.layer1 = self._make_layer( 64, 64, 3)
-        self.layer2 = self._make_layer( 64, 128, 4, stride=2)
-        self.layer3 = self._make_layer( 128, 256, 6, stride=2)
-        self.layer4 = self._make_layer( 256, 512, 3, stride=2)
-
-        #分类用的全连接
-        #self.fc = nn.Linear(512, num_classes)
+        self.layer1 = self._make_layer( 64, 128, 1)
+        self.sub1 = nn.Sequential(
+            nn.Conv2d(128, 128, 3, 1, 1),
+            nn.MaxPool2d(2, 2)
+        )
+        self.layer2 = self._make_layer( 128, 256, 2)
+        self.sub2 = nn.Sequential(
+            nn.Conv2d(256, 256, 3, 1, 1),
+            nn.MaxPool2d(2, 2)
+        )
+        self.layer3 = self._make_layer( 256, 512, 5)
+        self.sub3 = nn.Sequential(
+            nn.Conv2d(512, 512, 3, 1, 1),
+            nn.MaxPool2d(2, 2)
+        )
+        self.layer4 = self._make_layer( 512, 512, 3)
+        self.sub4 = nn.Conv2d(512, 512, 3, 1, 1)
     
     def _make_layer(self,  inchannel, outchannel, block_num, stride=1):
         '''
@@ -68,13 +79,15 @@ class content_encoder(BasicModule):
         x = self.pre(x)
         
         x = self.layer1(x)
+        x = self.sub1(x)
         x = self.layer2(x)
+        x = self.sub2(x)
         x = self.layer3(x)
+        x = self.sub3(x)
         x = self.layer4(x)
-        #avg = nn.AvgPool2d(4)  
-        #x = avg(x)
-        #x = F.avg_pool2d(x, 7)
-        #x = x.view(x.size(0), -1)
+        x = self.sub4(x)
+        avg = nn.AvgPool2d(2)  
+        x = avg(x)
         return x
 
 class style_encoder(BasicModule):
@@ -89,19 +102,33 @@ class style_encoder(BasicModule):
 
         # 前几层: 图像转换
         self.pre = nn.Sequential(
-                nn.Conv2d(3, 64, 7, 2, 3, bias=False),
+                nn.Conv2d(3, 32, 3, 1, 1),
+                nn.BatchNorm2d(32),
+                nn.Conv2d(32, 64, 3, 1, 1),
                 nn.BatchNorm2d(64),
                 nn.ReLU(inplace=True),
-                nn.MaxPool2d(3, 2, 1))
+                nn.MaxPool2d(2, 2))
         
         # 重复的layer，分别有3，4，6，3个residual block
-        self.layer1 = self._make_layer( 64, 64, 3)
-        self.layer2 = self._make_layer( 64, 128, 4, stride=2)
-        self.layer3 = self._make_layer( 128, 256, 6, stride=2)
-        self.layer4 = self._make_layer( 256, 512, 3, stride=2)
+        self.layer1 = self._make_layer( 64, 128, 1)
+        self.sub1 = nn.Sequential(
+            nn.Conv2d(128, 128, 3, 1, 1),
+            nn.MaxPool2d(2, 2)
+        )
+        self.layer2 = self._make_layer( 128, 256, 2)
+        self.sub2 = nn.Sequential(
+            nn.Conv2d(256, 256, 3, 1, 1),
+            nn.MaxPool2d(2, 2)
+        )
+        self.layer3 = self._make_layer( 256, 512, 5)
+        self.sub3 = nn.Sequential(
+            nn.Conv2d(512, 512, 3, 1, 1),
+            nn.MaxPool2d(2, 2)
+        )
+        self.layer4 = self._make_layer( 512, 512, 3)
+        self.sub4 = nn.Conv2d(512, 512, 3, 1, 1)
 
         #分类用的全连接
-        #self.fc = nn.Linear(512, num_classes)
     
     def _make_layer(self,  inchannel, outchannel, block_num, stride=1):
         '''
@@ -120,12 +147,15 @@ class style_encoder(BasicModule):
         
     def forward(self, x):
         x = self.pre(x)
-        
         x = self.layer1(x)
+        x = self.sub1(x)
         x = self.layer2(x)
+        x = self.sub2(x)
         x = self.layer3(x)
+        x = self.sub3(x)
         x = self.layer4(x)
-        avg = nn.AvgPool2d(4)  
+        x = self.sub4(x)
+        avg = nn.AvgPool2d(8)  
         x = avg(x)  # reduce dimension to [1, 512, 1, 1]
         x = x.view(x.size(0), -1) # flatten tensor to [1, 512]
         return x
