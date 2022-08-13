@@ -401,7 +401,7 @@ class SynthesisBlock(torch.nn.Module):
         self.register_buffer('resample_filter', upfirdn2d.setup_filter(resample_filter))
         self.num_conv = 0
         self.num_torgb = 0
-        print("**layer_kwargs: ", layer_kwargs)
+        #print("**layer_kwargs: ", layer_kwargs)
         #if in_channels == 0:
         #    self.const = encoder_out # should be 512x4x4
         #    print('first layer output channel: ', out_channels)
