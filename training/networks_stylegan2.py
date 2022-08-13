@@ -319,7 +319,7 @@ class SynthesisLayer(torch.nn.Module):
         assert noise_mode in ['random', 'const', 'none']
         in_resolution = self.resolution // self.up
         #misc.assert_shape(x, [None, self.in_channels, in_resolution, in_resolution*4])
-        misc.assert_shape(x, [None, self.in_channels, in_resolution, in_resolution*4])
+        misc.assert_shape(x, [None, self.in_channels, in_resolution, in_resolution])
         styles = self.affine(w)
 
         noise = None
