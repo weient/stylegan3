@@ -396,7 +396,7 @@ class SynthesisBlock(torch.nn.Module):
         self.register_buffer('resample_filter', upfirdn2d.setup_filter(resample_filter))
         self.num_conv = 0
         self.num_torgb = 0
-
+        print("**layer_kwargs: ", layer_kwargs)
         #if in_channels == 0:
         #    self.const = encoder_out # should be 512x4x4
         #    print('first layer output channel: ', out_channels)
@@ -465,7 +465,7 @@ class SynthesisBlock(torch.nn.Module):
             y = self.torgb(x, next(w_iter), fused_modconv=fused_modconv)
             y = y.to(dtype=torch.float32, memory_format=torch.contiguous_format)
             img = img.add_(y) if img is not None else y
-        print("is_last: ", self.is_last)
+        #print("is_last: ", self.is_last)
         assert x.dtype == dtype
         assert img is None or img.dtype == torch.float32
         return x, img
@@ -526,7 +526,7 @@ class SynthesisNetwork(torch.nn.Module):
         x = img = None
         for res, cur_ws in zip(self.block_resolutions, block_ws):
             block = getattr(self, f'b{res}')
-            print("cur_ws: ", cur_ws.size())
+            #print("cur_ws: ", cur_ws.size())
             x, img = block(encoder_out, x, img, cur_ws, **block_kwargs)
         return img
 
