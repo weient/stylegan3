@@ -13,8 +13,6 @@ import torch
 #----------------------------------------------------------------------------
 
 def fma(a, b, c): # => a * b + c
-    print("fma a: ", a.size())
-    print("fma b: ", b.size())
     return _FusedMultiplyAdd.apply(a, b, c)
 
 #----------------------------------------------------------------------------
@@ -22,6 +20,8 @@ def fma(a, b, c): # => a * b + c
 class _FusedMultiplyAdd(torch.autograd.Function): # a * b + c
     @staticmethod
     def forward(ctx, a, b, c): # pylint: disable=arguments-differ
+        print("fused a: ", a.size())
+        print("fused b: ", b.size())
         out = torch.addcmul(c, a, b)
         ctx.save_for_backward(a, b)
         ctx.c_shape = c.shape
