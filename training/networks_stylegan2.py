@@ -60,7 +60,9 @@ def modulated_conv2d(
     dcoefs = None
     if demodulate or fused_modconv:
         w = weight.unsqueeze(0) # [NOIkk]
+        print("w unsqueeze: ", w.size())
         w = w * styles.reshape(batch_size, 1, -1, 1, 1) # [NOIkk]
+        print("w second: ", w.size())
     if demodulate:
         dcoefs = (w.square().sum(dim=[2,3,4]) + 1e-8).rsqrt() # [NO]
     if demodulate and fused_modconv:
@@ -71,6 +73,8 @@ def modulated_conv2d(
         x = x * styles.to(x.dtype).reshape(batch_size, -1, 1, 1)
         x = conv2d_resample.conv2d_resample(x=x, w=weight.to(x.dtype), f=resample_filter, up=up, down=down, padding=padding, flip_weight=flip_weight)
         if demodulate and noise is not None:
+            print("x: ",x.size())
+            print("dcoefs: ", dcoefs.to(x.dtype).reshape(batch_size, -1, 1, 1).size())
             x = fma.fma(x, dcoefs.to(x.dtype).reshape(batch_size, -1, 1, 1), noise.to(x.dtype))
         elif demodulate:
             x = x * dcoefs.to(x.dtype).reshape(batch_size, -1, 1, 1)
