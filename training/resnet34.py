@@ -86,8 +86,8 @@ class content_encoder(BasicModule):
         x = self.sub3(x)
         x = self.layer4(x)
         x = self.sub4(x)
-        #avg = nn.AvgPool2d(4)  
-        #x = avg(x)
+        avg = nn.AvgPool2d(4)  
+        x = avg(x)
         return x
 
 class style_encoder(BasicModule):

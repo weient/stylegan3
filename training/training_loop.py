@@ -139,7 +139,7 @@ def training_loop(
     training_set_sampler = misc.InfiniteSampler(dataset=training_set, rank=rank, num_replicas=num_gpus, seed=random_seed)
     #training_set_iterator = iter(torch.utils.data.DataLoader(dataset=training_set, sampler=training_set_sampler, batch_size=batch_size//num_gpus, **data_loader_kwargs))
     training_set_iterator = iter(torch.rand(300, 4, 3, 256, 256))
-    text_set_iterator = iter(torch.rand(300, 4, 3, 64, 256))
+    text_set_iterator = iter(torch.rand(300, 4, 3, 256, 256))
     if rank == 0:
         print()
         #print('Num images: ', len(training_set))
