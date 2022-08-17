@@ -460,9 +460,9 @@ class SynthesisBlock(torch.nn.Module):
             
         else:
             x = self.conv0(x, next(w_iter), fused_modconv=fused_modconv, **layer_kwargs)
-            print("conv0 output shape: ", x.size())
+            #print("conv0 output shape: ", x.size())
             x = self.conv1(x, next(w_iter), fused_modconv=fused_modconv, **layer_kwargs)
-            print("conv1 output shape: ", x.size())
+            #print("conv1 output shape: ", x.size())
 
         # ToRGB.
         if img is not None:
@@ -536,7 +536,7 @@ class SynthesisNetwork(torch.nn.Module):
             block = getattr(self, f'b{res}')
             #print("cur_ws: ", cur_ws.size())
             x, img = block(encoder_out, x, img, cur_ws, **block_kwargs)
-            print("output size of block {}: ".format(res), x.size())
+            #print("output size of block {}: ".format(res), x.size())
         return img
 
     def extra_repr(self):
