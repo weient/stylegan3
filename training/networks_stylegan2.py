@@ -44,7 +44,7 @@ def modulated_conv2d(
     flip_weight     = True,     # False = convolution, True = correlation (matches torch.nn.functional.conv2d).
     fused_modconv   = True,     # Perform modulation, convolution, and demodulation as a single fused operation?
 ):
-    print("weight size: ", weight.size())
+    #print("weight size: ", weight.size())
     batch_size = x.shape[0]
     out_channels, in_channels, kh, kw = weight.shape
     misc.assert_shape(weight, [out_channels, in_channels, kh, kw]) # [OIkk]
@@ -61,9 +61,9 @@ def modulated_conv2d(
     dcoefs = None
     if demodulate or fused_modconv:
         w = weight.unsqueeze(0) # [NOIkk]
-        print("w unsqueeze: ", w.size())
+        #print("w unsqueeze: ", w.size())
         w = w * styles.reshape(batch_size, 1, -1, 1, 1) # [NOIkk]
-        print("w second: ", w.size())
+        #print("w second: ", w.size())
     if demodulate:
         dcoefs = (w.square().sum(dim=[2,3,4]) + 1e-8).rsqrt() # [NO]
     if demodulate and fused_modconv:
@@ -74,8 +74,8 @@ def modulated_conv2d(
         x = x * styles.to(x.dtype).reshape(batch_size, -1, 1, 1)
         x = conv2d_resample.conv2d_resample(x=x, w=weight.to(x.dtype), f=resample_filter, up=up, down=down, padding=padding, flip_weight=flip_weight)
         if demodulate and noise is not None:
-            print("x: ",x.size())
-            print("dcoefs: ", dcoefs.to(x.dtype).reshape(batch_size, -1, 1, 1).size())
+            #print("x: ",x.size())
+            #print("dcoefs: ", dcoefs.to(x.dtype).reshape(batch_size, -1, 1, 1).size())
             x = fma.fma(x, dcoefs.to(x.dtype).reshape(batch_size, -1, 1, 1), noise.to(x.dtype))
         elif demodulate:
             x = x * dcoefs.to(x.dtype).reshape(batch_size, -1, 1, 1)
