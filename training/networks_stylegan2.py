@@ -534,6 +534,7 @@ class SynthesisNetwork(torch.nn.Module):
             block = getattr(self, f'b{res}')
             #print("cur_ws: ", cur_ws.size())
             x, img = block(encoder_out, x, img, cur_ws, **block_kwargs)
+            print("output size of block {}: ".format(res), x.size())
         return img
 
     def extra_repr(self):
