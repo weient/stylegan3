@@ -77,7 +77,7 @@ def conv2d_resample(x, w, f=None, up=1, down=1, padding=0, groups=1, flip_weight
     out_channels, in_channels_per_group, kh, kw = _get_weight_shape(w)
     fw, fh = _get_filter_size(f)
     px0, px1, py0, py1 = _parse_padding(padding)
-    print("enter")
+    #print("enter")
     # Adjust padding to account for up/downsampling.
     if up > 1:
         px0 += (fw + up - 1) // 2
@@ -92,28 +92,28 @@ def conv2d_resample(x, w, f=None, up=1, down=1, padding=0, groups=1, flip_weight
 
     # Fast path: 1x1 convolution with downsampling only => downsample first, then convolve.
     if kw == 1 and kh == 1 and (down > 1 and up == 1):
-        print("here1")
+        #print("here1")
         x = upfirdn2d.upfirdn2d(x=x, f=f, down=down, padding=[px0,px1,py0,py1], flip_filter=flip_filter)
         x = _conv2d_wrapper(x=x, w=w, groups=groups, flip_weight=flip_weight)
         return x
 
     # Fast path: 1x1 convolution with upsampling only => convolve first, then upsample.
     if kw == 1 and kh == 1 and (up > 1 and down == 1):
-        print("here2")
+        #print("here2")
         x = _conv2d_wrapper(x=x, w=w, groups=groups, flip_weight=flip_weight)
         x = upfirdn2d.upfirdn2d(x=x, f=f, up=up, padding=[px0,px1,py0,py1], gain=up**2, flip_filter=flip_filter)
         return x
 
     # Fast path: downsampling only => use strided convolution.
     if down > 1 and up == 1:
-        print("here3")
+        #print("here3")
         x = upfirdn2d.upfirdn2d(x=x, f=f, padding=[px0,px1,py0,py1], flip_filter=flip_filter)
         x = _conv2d_wrapper(x=x, w=w, stride=down, groups=groups, flip_weight=flip_weight)
         return x
 
     # Fast path: upsampling with optional downsampling => use transpose strided convolution.
     if up > 1:
-        print("here4")
+        #print("here4")
         if groups == 1:
             w = w.transpose(0, 1)
         else:
@@ -134,7 +134,7 @@ def conv2d_resample(x, w, f=None, up=1, down=1, padding=0, groups=1, flip_weight
 
     # Fast path: no up/downsampling, padding supported by the underlying implementation => use plain conv2d.
     if up == 1 and down == 1:
-        print("here5")
+        #print("here5")
         if px0 == px1 and py0 == py1 and px0 >= 0 and py0 >= 0:
             return _conv2d_wrapper(x=x, w=w, padding=[py0,px0], groups=groups, flip_weight=flip_weight)
 

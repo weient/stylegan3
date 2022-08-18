@@ -72,10 +72,15 @@ def modulated_conv2d(
     # Execute by scaling the activations before and after the convolution.
     if not fused_modconv:
         x = x * styles.to(x.dtype).reshape(batch_size, -1, 1, 1)
+        print("w size: ", weight.size())
+        print("resample filter: ", resample_filter)
+        print("up: ", up)
+        print("down: ", down)
+        print("padding: ", padding)
+        print("flip weight: ", flip_weight)
         x = conv2d_resample.conv2d_resample(x=x, w=weight.to(x.dtype), f=resample_filter, up=up, down=down, padding=padding, flip_weight=flip_weight)
+        print("x'shape after resample: ", x.size())
         if demodulate and noise is not None:
-            #print("x: ",x.size())
-            #print("dcoefs: ", dcoefs.to(x.dtype).reshape(batch_size, -1, 1, 1).size())
             x = fma.fma(x, dcoefs.to(x.dtype).reshape(batch_size, -1, 1, 1), noise.to(x.dtype))
         elif demodulate:
             x = x * dcoefs.to(x.dtype).reshape(batch_size, -1, 1, 1)
@@ -535,9 +540,9 @@ class SynthesisNetwork(torch.nn.Module):
         for res, cur_ws in zip(self.block_resolutions, block_ws):
             block = getattr(self, f'b{res}')
             #print("cur_ws: ", cur_ws.size())
-            print("enter block {}: ".format(res))
+            #print("enter block {}: ".format(res))
             x, img = block(encoder_out, x, img, cur_ws, **block_kwargs)
-            print("exit block {}: ".format(res))
+            #print("exit block {}: ".format(res))
         return img
 
     def extra_repr(self):
