@@ -755,7 +755,7 @@ class DiscriminatorEpilogue(torch.nn.Module):
         self.out = FullyConnectedLayer(in_channels, 1 if cmap_dim == 0 else cmap_dim)
 
     def forward(self, x, img, cmap, force_fp32=False):
-        misc.assert_shape(x, [None, self.in_channels, self.resolution, self.resolution]) # [NCHW]
+        #misc.assert_shape(x, [None, self.in_channels, self.resolution, self.resolution]) # [NCHW]
         _ = force_fp32 # unused
         dtype = torch.float32
         memory_format = torch.contiguous_format
