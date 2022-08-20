@@ -29,6 +29,20 @@ def normalize_2nd_moment(x, dim=1, eps=1e-8):
     return x * (x.square().mean(dim=dim, keepdim=True) + eps).rsqrt()
 
 #----------------------------------------------------------------------------
+def merge_input(in_list):
+    out = torch.cat(in_list, 3)
+    return out
+
+
+def split_input(img_in):
+    block_res = int(img_in.size(3)/4)
+    block_list = []
+    index = 0
+    for i in range(4):
+        cur_block = img_in[:, :, :, index:index+block_res]
+        block_list.append(cur_block)
+        index += block_res
+    return block_list
 
 #@misc.profiled_function
 def modulated_conv2d(
@@ -72,16 +86,23 @@ def modulated_conv2d(
     # Execute by scaling the activations before and after the convolution.
     if not fused_modconv:
         x = x * styles.to(x.dtype).reshape(batch_size, -1, 1, 1)
+        '''
         print("w size: ", weight.size())
         print("resample filter: ", resample_filter)
         print("up: ", up)
         print("down: ", down)
         print("padding: ", padding)
         print("flip weight: ", flip_weight)
+        '''
         x = conv2d_resample.conv2d_resample(x=x, w=weight.to(x.dtype), f=resample_filter, up=up, down=down, padding=padding, flip_weight=flip_weight)
         print("x'shape after resample: ", x.size())
         if demodulate and noise is not None:
-            x = fma.fma(x, dcoefs.to(x.dtype).reshape(batch_size, -1, 1, 1), noise.to(x.dtype))
+            x_list = split_input(x)
+            fma_out = []
+            for x in x_list:
+                tmp = fma.fma(x, dcoefs.to(x.dtype).reshape(batch_size, -1, 1, 1), noise.to(x.dtype))
+                fma_out.append(tmp)
+            x = merge_input(fma_out)
         elif demodulate:
             x = x * dcoefs.to(x.dtype).reshape(batch_size, -1, 1, 1)
         elif noise is not None:
@@ -325,7 +346,7 @@ class SynthesisLayer(torch.nn.Module):
         assert noise_mode in ['random', 'const', 'none']
         in_resolution = self.resolution // self.up
         #misc.assert_shape(x, [None, self.in_channels, in_resolution, in_resolution*4])
-        misc.assert_shape(x, [None, self.in_channels, in_resolution, in_resolution])
+        #misc.assert_shape(x, [None, self.in_channels, in_resolution, in_resolution])
         styles = self.affine(w)
 
         noise = None
