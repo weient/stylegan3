@@ -668,7 +668,7 @@ class DiscriminatorBlock(torch.nn.Module):
 
         # Input.
         if x is not None:
-            misc.assert_shape(x, [None, self.in_channels, self.resolution, self.resolution])
+            #misc.assert_shape(x, [None, self.in_channels, self.resolution, self.resolution])
             x = x.to(dtype=dtype, memory_format=memory_format)
 
         # FromRGB.
