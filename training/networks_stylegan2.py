@@ -773,6 +773,7 @@ class DiscriminatorEpilogue(torch.nn.Module):
         if self.mbstd is not None:
             x = self.mbstd(x)
         x = self.conv(x)
+        print("x.flatten(1): ", x.flatten(1))
         x = self.fc(x.flatten(1))
         x = self.out(x)
 
