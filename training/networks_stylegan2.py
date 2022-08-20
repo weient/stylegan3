@@ -153,6 +153,8 @@ class FullyConnectedLayer(torch.nn.Module):
         if self.activation == 'linear' and b is not None:
             x = torch.addmm(b.unsqueeze(0), x, w.t())
         else:
+            print("w: ", w.size())
+            print("w transpose: ", w.t().size())
             x = x.matmul(w.t())
             x = bias_act.bias_act(x, b, act=self.activation)
         return x
