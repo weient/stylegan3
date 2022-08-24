@@ -2,6 +2,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from .basic_module import *
+from torchvision.ops import roi_align
 
 class ResidualBlock(nn.Module):
     '''
@@ -145,7 +146,7 @@ class style_encoder(BasicModule):
             layers.append(ResidualBlock(outchannel, outchannel))
         return nn.Sequential(*layers)
         
-    def forward(self, x):
+    def forward(self, x, bounding_box):
         x = self.pre(x)
         x = self.layer1(x)
         x = self.sub1(x)
@@ -155,8 +156,9 @@ class style_encoder(BasicModule):
         x = self.sub3(x)
         x = self.layer4(x)
         x = self.sub4(x)
-        avg = nn.AvgPool2d(16)  
-        x = avg(x)  # reduce dimension to [1, 512, 1, 1]
+        x = roi_align(x, bounding_box, output_size=1, spatial_scale=0.0625, aligned=True)
+        #avg = nn.AvgPool2d(16)  
+        #x = avg(x)  # reduce dimension to [1, 512, 1, 1]
         x = x.view(x.size(0), -1) # flatten tensor to [1, 512]
         return x
  

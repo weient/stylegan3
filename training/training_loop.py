@@ -9,6 +9,7 @@
 """Main training loop."""
 
 import os
+from random import shuffle
 import time
 import copy
 import json
@@ -89,7 +90,9 @@ def save_image_grid(img, fname, drange, grid_size):
 
 def training_loop(
     run_dir                 = '.',      # Output directory.
-    training_set_kwargs     = {},       # Options for training set.
+    rec_set_kwargs          = {},       # args for rectangle images
+    square_set_kwargs       = {},       # args for square images
+    text_set_kwargs         = {},       # args for text images
     data_loader_kwargs      = {},       # Options for torch.utils.data.DataLoader.
     G_kwargs                = {},       # Options for generator network.
     D_kwargs                = {},       # Options for discriminator network.
@@ -135,11 +138,18 @@ def training_loop(
     # Load training set.
     if rank == 0:
         print('Loading training set...')
-    training_set = dnnlib.util.construct_class_by_name(**training_set_kwargs) # subclass of training.dataset.Dataset
-    training_set_sampler = misc.InfiniteSampler(dataset=training_set, rank=rank, num_replicas=num_gpus, seed=random_seed)
-    #training_set_iterator = iter(torch.utils.data.DataLoader(dataset=training_set, sampler=training_set_sampler, batch_size=batch_size//num_gpus, **data_loader_kwargs))
-    training_set_iterator = iter(torch.rand(300, 4, 3, 256, 256))
-    text_set_iterator = iter(torch.rand(300, 4, 3, 64, 256))
+    #training_set = dnnlib.util.construct_class_by_name(**training_set_kwargs) # subclass of training.dataset.Dataset
+    rec_set = dnnlib.util.construct_class_by_name(**rec_set_kwargs)
+    square_set = dnnlib.util.construct_class_by_name(**square_set_kwargs)
+    text_set = dnnlib.util.construct_class_by_name(**text_set_kwargs)
+    
+    #square_set_sampler = misc.InfiniteSampler(dataset=square_set, rank=rank, num_replicas=num_gpus, seed=random_seed)
+    square_set_iterator = iter(torch.utils.data.DataLoader(dataset=square_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
+    rec_set_iterator = iter(torch.utils.data.DataLoader(dataset=rec_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
+    text_set_iterator = iter(torch.utils.data.DataLoader(dataset=text_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
+    
+    #training_set_iterator = iter(torch.rand(300, 4, 3, 256, 256))
+    #text_set_iterator = iter(torch.rand(300, 4, 3, 64, 256))
     if rank == 0:
         print()
         #print('Num images: ', len(training_set))
@@ -150,9 +160,10 @@ def training_loop(
     # Construct networks.
     if rank == 0:
         print('Constructing networks...')
-    common_kwargs = dict(c_dim=training_set.label_dim, img_resolution=training_set.resolution, img_channels=training_set.num_channels)
+    common_kwargs = dict(c_dim=square_set.label_dim, img_resolution=square_set.resolution, img_channels=square_set.num_channels)
+    D_common_kwargs = dict(c_dim=rec_set.label_dim, img_resolution=rec_set.resolution, img_channels=rec_set.num_channels)
     G = dnnlib.util.construct_class_by_name(**G_kwargs, **common_kwargs).train().requires_grad_(False).to(device) # subclass of torch.nn.Module
-    D = dnnlib.util.construct_class_by_name(**D_kwargs, **common_kwargs).train().requires_grad_(False).to(device) # subclass of torch.nn.Module
+    D = dnnlib.util.construct_class_by_name(**D_kwargs, **D_common_kwargs).train().requires_grad_(False).to(device) # subclass of torch.nn.Module
     G_ema = copy.deepcopy(G).eval()
 
     # Resume from existing pickle.
@@ -258,14 +269,16 @@ def training_loop(
         # Fetch training data.
         with torch.autograd.profiler.record_function('data_fetch'):
             phase_real_c = None
-            phase_real_img = next(training_set_iterator)
+            phase_real_img = next(square_set_iterator)
+            phase_real_rec = next(rec_set_iterator)
             phase_real_text = next(text_set_iterator)
             phase_real_img = (phase_real_img.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
             phase_real_text = (phase_real_text.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
+            phase_real_rec = (phase_real_rec.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
             #phase_real_c = phase_real_c.to(device).split(batch_gpu)
             all_gen_z = torch.randn([len(phases) * batch_size, G.z_dim], device=device)
             all_gen_z = [phase_gen_z.split(batch_gpu) for phase_gen_z in all_gen_z.split(batch_size)]
-            all_gen_c = [training_set.get_label(np.random.randint(len(training_set))) for _ in range(len(phases) * batch_size)]
+            all_gen_c = [square_set.get_label(np.random.randint(len(square_set))) for _ in range(len(phases) * batch_size)]
             all_gen_c = torch.from_numpy(np.stack(all_gen_c)).pin_memory().to(device)
             all_gen_c = [phase_gen_c.split(batch_gpu) for phase_gen_c in all_gen_c.split(batch_size)]
 
@@ -279,8 +292,8 @@ def training_loop(
             # Accumulate gradients.
             phase.opt.zero_grad(set_to_none=True)
             phase.module.requires_grad_(True)
-            for real_img, real_text, gen_z, gen_c in zip(phase_real_img, phase_real_text, phase_gen_z, phase_gen_c):
-                loss.accumulate_gradients(phase=phase.name, real_img=real_img, real_text = real_text, real_c=None, gen_z=gen_z, gen_c=gen_c, gain=phase.interval, cur_nimg=cur_nimg)
+            for real_img, real_img_rec, real_text, gen_z, gen_c in zip(phase_real_img, phase_real_rec, phase_real_text, phase_gen_z, phase_gen_c):
+                loss.accumulate_gradients(phase=phase.name, real_img=real_img, real_img_rec=real_img_rec, real_text = real_text, real_c=None, gen_z=gen_z, gen_c=gen_c, gain=phase.interval, cur_nimg=cur_nimg)
             phase.module.requires_grad_(False)
 
             # Update weights.
@@ -362,7 +375,7 @@ def training_loop(
         snapshot_pkl = None
         snapshot_data = None
         if (network_snapshot_ticks is not None) and (done or cur_tick % network_snapshot_ticks == 0):
-            snapshot_data = dict(G=G, D=D, G_ema=G_ema, augment_pipe=augment_pipe, training_set_kwargs=dict(training_set_kwargs))
+            snapshot_data = dict(G=G, D=D, G_ema=G_ema, augment_pipe=augment_pipe, training_set_kwargs=dict(square_set_kwargs))
             for key, value in snapshot_data.items():
                 if isinstance(value, torch.nn.Module):
                     value = copy.deepcopy(value).eval().requires_grad_(False)
