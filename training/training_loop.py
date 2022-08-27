@@ -293,6 +293,7 @@ def training_loop(
             phase_real_img = next(square_set_iterator)
             phase_real_rec = next(rec_set_iterator)
             phase_real_text = next(text_set_iterator)
+            print("phase_real_img type: ", type(phase_real_img))
             phase_real_img = (phase_real_img.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
             phase_real_text = (phase_real_text.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
             phase_real_rec = (phase_real_rec.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
