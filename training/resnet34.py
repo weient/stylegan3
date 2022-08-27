@@ -167,6 +167,6 @@ class style_encoder(BasicModule):
         #avg = nn.AvgPool2d(16)  
         #x = avg(x)  # reduce dimension to [1, 512, 1, 1]
         x = x.view(x.size(0), -1) # flatten tensor to [1, 512]
-        print("shape after view: ", x)
+        print("shape after view: ", x.size())
         return x
  
