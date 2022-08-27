@@ -93,6 +93,7 @@ def training_loop(
     rec_set_kwargs          = {},       # args for rectangle images
     square_set_kwargs       = {},       # args for square images
     text_set_kwargs         = {},       # args for text images
+    bounding_box_path       = {},
     data_loader_kwargs      = {},       # Options for torch.utils.data.DataLoader.
     G_kwargs                = {},       # Options for generator network.
     D_kwargs                = {},       # Options for discriminator network.
@@ -134,6 +135,15 @@ def training_loop(
     torch.backends.cudnn.allow_tf32 = False             # Improves numerical accuracy.
     conv2d_gradfix.enabled = True                       # Improves training speed.
     grid_sample_gradfix.enabled = True                  # Avoids errors with the augmentation pipe.
+    # handle bounding boxes and label
+    with open(bounding_box_path) as f:
+        box_tmp = json.load(f)
+    box_list = sorted(box_tmp.keys())
+    boxes = []
+    strings = [] # 每個字串label
+    for name in box_list:
+        strings.append(box_tmp[name]['word'])
+        boxes.append(box_tmp[name]['bounding_box'])
 
     # Load training set.
     if rank == 0:
@@ -292,8 +302,8 @@ def training_loop(
             # Accumulate gradients.
             phase.opt.zero_grad(set_to_none=True)
             phase.module.requires_grad_(True)
-            for real_img, real_img_rec, real_text, gen_z, gen_c in zip(phase_real_img, phase_real_rec, phase_real_text, phase_gen_z, phase_gen_c):
-                loss.accumulate_gradients(phase=phase.name, real_img=real_img, real_img_rec=real_img_rec, real_text = real_text, real_c=None, gen_z=gen_z, gen_c=gen_c, gain=phase.interval, cur_nimg=cur_nimg)
+            for box, real_img, real_img_rec, real_text, gen_z, gen_c in zip(boxes, phase_real_img, phase_real_rec, phase_real_text, phase_gen_z, phase_gen_c):
+                loss.accumulate_gradients(bounding_box=box, phase=phase.name, real_img=real_img, real_img_rec=real_img_rec, real_text = real_text, real_c=None, gen_z=gen_z, gen_c=gen_c, gain=phase.interval, cur_nimg=cur_nimg)
             phase.module.requires_grad_(False)
 
             # Update weights.
