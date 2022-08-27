@@ -125,7 +125,7 @@ class Dataset(torch.utils.data.Dataset):
     @property
     def resolution(self):
         assert len(self.image_shape) == 3 # CHW
-        assert self.image_shape[1] == self.image_shape[2]
+        #assert self.image_shape[1] == self.image_shape[2]
         return self.image_shape[1]
 
     @property
