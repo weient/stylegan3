@@ -161,7 +161,7 @@ class style_encoder(BasicModule):
         bounding_box = tmp
         print(bounding_box)
         bounding_box = torch.Tensor(bounding_box)
-        x = roi_align(x, bounding_box, output_size=1, spatial_scale=0.0625, aligned=True)
+        x = roi_align(x, [bounding_box], output_size=1, spatial_scale=0.0625, aligned=True)
         #avg = nn.AvgPool2d(16)  
         #x = avg(x)  # reduce dimension to [1, 512, 1, 1]
         x = x.view(x.size(0), -1) # flatten tensor to [1, 512]
