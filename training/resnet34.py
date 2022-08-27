@@ -157,7 +157,8 @@ class style_encoder(BasicModule):
         x = self.layer4(x)
         x = self.sub4(x)
         tmp = []
-        bounding_box = tmp.append(bounding_box)
+        tmp.append(bounding_box)
+        bounding_box = tmp
         print(bounding_box)
         bounding_box = torch.Tensor(bounding_box)
         x = roi_align(x, bounding_box, output_size=1, spatial_scale=0.0625, aligned=True)
