@@ -141,9 +141,20 @@ def training_loop(
     box_list = sorted(box_tmp.keys())
     boxes = []
     strings = [] # 每個字串label
+    buf = []
+    buf_str = []
+    cnt = 0
     for name in box_list:
-        strings.append(box_tmp[name]['word'])
-        boxes.append(box_tmp[name]['bounding_box'])
+        if cnt==4 :
+            boxes.append(buf)
+            strings.append(buf_str)
+            buf_str = []
+            buf = []
+            cnt = 0
+        
+        buf_str.append(box_tmp[name]['word'])
+        buf.append(box_tmp[name]['bounding_box'])
+        cnt += 1
 
     # Load training set.
     if rank == 0:
@@ -157,7 +168,7 @@ def training_loop(
     square_set_iterator = iter(torch.utils.data.DataLoader(dataset=square_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
     rec_set_iterator = iter(torch.utils.data.DataLoader(dataset=rec_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
     text_set_iterator = iter(torch.utils.data.DataLoader(dataset=text_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
-    
+    box_iterator = iter(boxes)
     #training_set_iterator = iter(torch.rand(300, 4, 3, 256, 256))
     #text_set_iterator = iter(torch.rand(300, 4, 3, 64, 256))
     if rank == 0:
@@ -292,6 +303,7 @@ def training_loop(
             all_gen_c = torch.from_numpy(np.stack(all_gen_c)).pin_memory().to(device)
             all_gen_c = [phase_gen_c.split(batch_gpu) for phase_gen_c in all_gen_c.split(batch_size)]
 
+        phase_box = next(box_iterator)
         # Execute training phases.
         for phase, phase_gen_z, phase_gen_c in zip(phases, all_gen_z, all_gen_c):
             if batch_idx % phase.interval != 0:
@@ -302,7 +314,7 @@ def training_loop(
             # Accumulate gradients.
             phase.opt.zero_grad(set_to_none=True)
             phase.module.requires_grad_(True)
-            for box, real_img, real_img_rec, real_text, gen_z, gen_c in zip(boxes, phase_real_img, phase_real_rec, phase_real_text, phase_gen_z, phase_gen_c):
+            for box, real_img, real_img_rec, real_text, gen_z, gen_c in zip(phase_box, phase_real_img, phase_real_rec, phase_real_text, phase_gen_z, phase_gen_c):
                 loss.accumulate_gradients(bounding_box=box, phase=phase.name, real_img=real_img, real_img_rec=real_img_rec, real_text = real_text, real_c=None, gen_z=gen_z, gen_c=gen_c, gain=phase.interval, cur_nimg=cur_nimg)
             phase.module.requires_grad_(False)
 
