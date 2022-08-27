@@ -182,7 +182,9 @@ class ImageFolderDataset(Dataset):
         raw_shape = [len(self._image_fnames)] + list(self._load_raw_image(0).shape)
         print("raw shape: ", raw_shape)
         if resolution is not None and (raw_shape[2] != resolution or raw_shape[3] != resolution):
-            raise IOError('Image files do not match the specified resolution')
+            print("shape[2]: ", raw_shape[2])
+            print("shape[3]: ", raw_shape[3])
+            #raise IOError('Image files do not match the specified resolution')
         super().__init__(name=name, raw_shape=raw_shape, **super_kwargs)
 
     @staticmethod
