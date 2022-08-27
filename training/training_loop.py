@@ -290,9 +290,9 @@ def training_loop(
         # Fetch training data.
         with torch.autograd.profiler.record_function('data_fetch'):
             phase_real_c = None
-            phase_real_img = next(square_set_iterator)
-            phase_real_rec = next(rec_set_iterator)
-            phase_real_text = next(text_set_iterator)
+            phase_real_img, _ = next(square_set_iterator)
+            phase_real_rec, _ = next(rec_set_iterator)
+            phase_real_text, _ = next(text_set_iterator)
             print("phase_real_img type: ", type(phase_real_img))
             phase_real_img = (phase_real_img.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
             phase_real_text = (phase_real_text.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
