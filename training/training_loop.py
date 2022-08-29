@@ -160,12 +160,13 @@ def training_loop(
     if rank == 0:
         print('Loading training set...')
     #training_set = dnnlib.util.construct_class_by_name(**training_set_kwargs) # subclass of training.dataset.Dataset
+    #modify
     rec_set = dnnlib.util.construct_class_by_name(**rec_set_kwargs)
-    square_set = dnnlib.util.construct_class_by_name(**square_set_kwargs)
+    #square_set = dnnlib.util.construct_class_by_name(**square_set_kwargs)
     text_set = dnnlib.util.construct_class_by_name(**text_set_kwargs)
     
     #square_set_sampler = misc.InfiniteSampler(dataset=square_set, rank=rank, num_replicas=num_gpus, seed=random_seed)
-    square_set_iterator = iter(torch.utils.data.DataLoader(dataset=square_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
+    #square_set_iterator = iter(torch.utils.data.DataLoader(dataset=square_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
     rec_set_iterator = iter(torch.utils.data.DataLoader(dataset=rec_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
     text_set_iterator = iter(torch.utils.data.DataLoader(dataset=text_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
     box_iterator = iter(boxes)
@@ -181,7 +182,8 @@ def training_loop(
     # Construct networks.
     if rank == 0:
         print('Constructing networks...')
-    common_kwargs = dict(c_dim=square_set.label_dim, img_resolution=square_set.resolution, img_channels=square_set.num_channels)
+    # modify
+    common_kwargs = dict(c_dim=rec_set.label_dim, img_resolution=rec_set.resolution, img_channels=rec_set.num_channels)
     D_common_kwargs = dict(c_dim=rec_set.label_dim, img_resolution=rec_set.resolution, img_channels=rec_set.num_channels)
     G = dnnlib.util.construct_class_by_name(**G_kwargs, **common_kwargs).train().requires_grad_(False).to(device) # subclass of torch.nn.Module
     D = dnnlib.util.construct_class_by_name(**D_kwargs, **D_common_kwargs).train().requires_grad_(False).to(device) # subclass of torch.nn.Module
@@ -286,21 +288,22 @@ def training_loop(
     if progress_fn is not None:
         progress_fn(0, total_kimg)
     while True:
-
+        # modify
         # Fetch training data.
         with torch.autograd.profiler.record_function('data_fetch'):
             phase_real_c = None
             #phase_real_img, _ = next(square_set_iterator)
             phase_real_rec, _ = next(rec_set_iterator)
             phase_real_text, _ = next(text_set_iterator)
-            print("phase_real_img type: ", type(phase_real_img))
+            #print("phase_real_img type: ", type(phase_real_img))
             #phase_real_img = (phase_real_img.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
             phase_real_text = (phase_real_text.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
             phase_real_rec = (phase_real_rec.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
             #phase_real_c = phase_real_c.to(device).split(batch_gpu)
             all_gen_z = torch.randn([len(phases) * batch_size, G.z_dim], device=device)
             all_gen_z = [phase_gen_z.split(batch_gpu) for phase_gen_z in all_gen_z.split(batch_size)]
-            all_gen_c = [square_set.get_label(np.random.randint(len(square_set))) for _ in range(len(phases) * batch_size)]
+            #modify
+            all_gen_c = [rec_set.get_label(np.random.randint(len(rec_set))) for _ in range(len(phases) * batch_size)]
             all_gen_c = torch.from_numpy(np.stack(all_gen_c)).pin_memory().to(device)
             all_gen_c = [phase_gen_c.split(batch_gpu) for phase_gen_c in all_gen_c.split(batch_size)]
 
