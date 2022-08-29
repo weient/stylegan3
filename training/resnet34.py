@@ -158,7 +158,7 @@ class style_encoder(BasicModule):
         x = self.sub4(x)
         avg = nn.AvgPool2d(16)  
         x = avg(x)  # reduce dimension to [1, 512, 1, 1]
-        print("x after avg: ", x)
+        print("x after avg: ", x.size())
         '''
         tmp = []
         tmp.append(bounding_box)
