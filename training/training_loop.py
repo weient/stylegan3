@@ -166,7 +166,7 @@ def training_loop(
     '''
     square_set_sampler = misc.InfiniteSampler(dataset=square_set, rank=rank, num_replicas=num_gpus, seed=random_seed)
     '''
-    square_set_iterator = iter(torch.utils.data.DataLoader(dataset=square_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
+    square_set_iterator = iter(torch.utils.data.DataLoader(dataset=rec_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
     rec_set_iterator = iter(torch.utils.data.DataLoader(dataset=rec_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
     text_set_iterator = iter(torch.utils.data.DataLoader(dataset=text_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
     box_iterator = iter(boxes)
