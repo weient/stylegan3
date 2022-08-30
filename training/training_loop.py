@@ -161,12 +161,15 @@ def training_loop(
         print('Loading training set...')
     
     rec_set = dnnlib.util.construct_class_by_name(**rec_set_kwargs)
-    square_set = dnnlib.util.construct_class_by_name(**square_set_kwargs)
+    #square_set = dnnlib.util.construct_class_by_name(**square_set_kwargs)
     text_set = dnnlib.util.construct_class_by_name(**text_set_kwargs)
     '''
     square_set_sampler = misc.InfiniteSampler(dataset=square_set, rank=rank, num_replicas=num_gpus, seed=random_seed)
     '''
-    square_set_iterator = iter(torch.utils.data.DataLoader(dataset=square_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
+    square_set = np.load(square_set_kwargs['path'])
+    square_set = torch.from_numpy(square_set)
+    square_set_iterator = iter(square_set)
+    #square_set_iterator = iter(torch.utils.data.DataLoader(dataset=square_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
     rec_set_iterator = iter(torch.utils.data.DataLoader(dataset=rec_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
     text_set_iterator = iter(torch.utils.data.DataLoader(dataset=text_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
     box_iterator = iter(boxes)
@@ -182,7 +185,7 @@ def training_loop(
     if rank == 0:
         print('Constructing networks...')
     
-    common_kwargs = dict(c_dim=square_set.label_dim, img_resolution=square_set.resolution, img_channels=square_set.num_channels)
+    common_kwargs = dict(c_dim=0, img_resolution=square_set_kwargs['resolution'], img_channels=3)
     D_common_kwargs = dict(c_dim=rec_set.label_dim, img_resolution=rec_set.resolution, img_channels=rec_set.num_channels)
     G = dnnlib.util.construct_class_by_name(**G_kwargs, **common_kwargs).train().requires_grad_(False).to(device) # subclass of torch.nn.Module
     D = dnnlib.util.construct_class_by_name(**D_kwargs, **D_common_kwargs).train().requires_grad_(False).to(device) # subclass of torch.nn.Module
