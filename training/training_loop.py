@@ -168,7 +168,7 @@ def training_loop(
     '''
     square_set_iterator = iter(torch.utils.data.DataLoader(dataset=square_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
     rec_set_iterator = iter(torch.utils.data.DataLoader(dataset=rec_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
-    #text_set_iterator = iter(torch.utils.data.DataLoader(dataset=text_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
+    text_set_iterator = iter(torch.utils.data.DataLoader(dataset=text_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
     box_iterator = iter(boxes)
     '''
     training_set_iterator = iter(torch.rand(300, 4, 3, 256, 256))
@@ -290,16 +290,16 @@ def training_loop(
     if progress_fn is not None:
         progress_fn(0, total_kimg)
     while True:
-        #modify
+        
         # Fetch training data.
         with torch.autograd.profiler.record_function('data_fetch'):
             phase_real_c = None
             phase_real_img, _ = next(square_set_iterator)
             phase_real_rec, _ = next(rec_set_iterator)
-            #phase_real_text, _ = next(text_set_iterator)
+            phase_real_text, _ = next(text_set_iterator)
             
             phase_real_img = (phase_real_img.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
-            #phase_real_text = (phase_real_text.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
+            phase_real_text = (phase_real_text.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
             phase_real_rec = (phase_real_rec.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
             
             all_gen_z = torch.randn([len(phases) * batch_size, G.z_dim], device=device)
