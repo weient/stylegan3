@@ -40,6 +40,7 @@ class StyleGAN2Loss(Loss):
         self.blur_fade_kimg     = blur_fade_kimg
 
     def run_G(self, bounding_box, img_style, img_text, c, update_emas=False):
+        print("Running Generator\n")
         style_out = self.G.style_encoder(img_style, bounding_box)
         content_out = self.G.content_encoder(img_text)
         ws = self.G.mapping(style_out, c, update_emas=update_emas)
@@ -53,6 +54,7 @@ class StyleGAN2Loss(Loss):
         return img, ws
 
     def run_D(self, img, c, blur_sigma=0, update_emas=False):
+        print("Running Discriminator\n")
         blur_size = np.floor(blur_sigma * 3)
         if blur_size > 0:
             with torch.autograd.profiler.record_function('blur'):
