@@ -168,7 +168,7 @@ class style_encoder(BasicModule):
         print("bounding_box shape: ", len(bounding_box))
         device = torch.device('cuda')
         bounding_box = torch.Tensor(bounding_box).to(device)
-        x = roi_align(x, [bounding_box], output_size=1, spatial_scale=0.0625, aligned=True)
+        x = roi_align(x, [bounding_box], output_size=4, spatial_scale=0.0625, aligned=True)
         print("shape after roi: ", x.size())
         
         x = x.view(x.size(0), -1) # flatten tensor to [1, 512]
