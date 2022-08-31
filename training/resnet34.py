@@ -161,14 +161,16 @@ class style_encoder(BasicModule):
         x = avg(x)  # reduce dimension to [1, 512, 1, 1]
         '''
         print("shape before roi: ", x.size())
-        #tmp = []
+        #tmp = [] 
         #tmp.append(bounding_box)
         #bounding_box = tmp
         #device = torch.device('cuda')
         #bounding_box = torch.Tensor(bounding_box).to(device)
-        bounding_box = bounding_box[:, None, :]
+        bounding_box = list(torch.split(bounding_box, 1))
+        #bounding_box = bounding_box[:, None, :]
+
         print(bounding_box)
-        x = roi_align(x, [bounding_box], output_size=1, spatial_scale=0.0625, aligned=True)
+        x = roi_align(x, bounding_box, output_size=1, spatial_scale=0.0625, aligned=True)
         print("shape after roi: ", x.size())
         
         x = x.view(x.size(0), -1) # flatten tensor to [1, 512]
