@@ -166,6 +166,7 @@ class style_encoder(BasicModule):
         #bounding_box = tmp
         #device = torch.device('cuda')
         #bounding_box = torch.Tensor(bounding_box).to(device)
+        print(bounding_box.size())
         bounding_box = list(torch.split(bounding_box, 1))
         #bounding_box = bounding_box[:, None, :]
 
