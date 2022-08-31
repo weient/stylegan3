@@ -139,6 +139,7 @@ def training_loop(
     with open(bounding_box_path) as f:
         box_tmp = json.load(f)
     box_list = sorted(box_tmp.keys())
+    print("box_list: ", box_list)
     boxes = []
     strings = [] # 每個字串label
     buf = []
