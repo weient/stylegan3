@@ -58,7 +58,7 @@ def modulated_conv2d(
     flip_weight     = True,     # False = convolution, True = correlation (matches torch.nn.functional.conv2d).
     fused_modconv   = True,     # Perform modulation, convolution, and demodulation as a single fused operation?
 ):
-    #print("weight size: ", weight.size())
+    
     batch_size = x.shape[0]
     out_channels, in_channels, kh, kw = weight.shape
     misc.assert_shape(weight, [out_channels, in_channels, kh, kw]) # [OIkk]
@@ -75,9 +75,7 @@ def modulated_conv2d(
     dcoefs = None
     if demodulate or fused_modconv:
         w = weight.unsqueeze(0) # [NOIkk]
-        #print("w unsqueeze: ", w.size())
         w = w * styles.reshape(batch_size, 1, -1, 1, 1) # [NOIkk]
-        #print("w second: ", w.size())
     if demodulate:
         dcoefs = (w.square().sum(dim=[2,3,4]) + 1e-8).rsqrt() # [NO]
     if demodulate and fused_modconv:
@@ -95,7 +93,7 @@ def modulated_conv2d(
         print("flip weight: ", flip_weight)
         '''
         x = conv2d_resample.conv2d_resample(x=x, w=weight.to(x.dtype), f=resample_filter, up=up, down=down, padding=padding, flip_weight=flip_weight)
-        print("x'shape after resample: ", x.size())
+        '''print("x'shape after resample: ", x.size())'''
         if demodulate and noise is not None:
             x_list = split_input(x)
             fma_out = []
@@ -153,8 +151,10 @@ class FullyConnectedLayer(torch.nn.Module):
         if self.activation == 'linear' and b is not None:
             x = torch.addmm(b.unsqueeze(0), x, w.t())
         else:
+            '''
             print("w: ", w.size())
             print("w transpose: ", w.t().size())
+            '''
             x = x.matmul(w.t())
             x = bias_act.bias_act(x, b, act=self.activation)
         return x
@@ -265,8 +265,6 @@ class MappingNetwork(torch.nn.Module):
 
     def forward(self, z, c, truncation_psi=1, truncation_cutoff=None, update_emas=False):
         # Embed, normalize, and concat inputs.
-        # modify
-        #print('z shape: ', z.size())
         x = None
         with torch.autograd.profiler.record_function('input'):
             if self.z_dim > 0:
@@ -300,7 +298,7 @@ class MappingNetwork(torch.nn.Module):
                     x = self.w_avg.lerp(x, truncation_psi)
                 else:
                     x[:, :truncation_cutoff] = self.w_avg.lerp(x[:, :truncation_cutoff], truncation_psi)
-        #print('output of mapping network: ', x)
+        
         return x
 
     def extra_repr(self):
@@ -470,8 +468,7 @@ class SynthesisBlock(torch.nn.Module):
         # Input.
         if self.in_channels == 0:
             x = encoder_out
-            #x = x.unsqueeze(0).repeat([ws.shape[0], 1, 1, 1])
-            #print('x shape: ', x.size())
+    
         else:
             #misc.assert_shape(x, [None, self.in_channels, self.resolution // 2, self.resolution // 2])
             x = x.to(dtype=dtype, memory_format=memory_format)
@@ -488,9 +485,9 @@ class SynthesisBlock(torch.nn.Module):
             
         else:
             x = self.conv0(x, next(w_iter), fused_modconv=fused_modconv, **layer_kwargs)
-            #print("conv0 output shape: ", x.size())
+            
             x = self.conv1(x, next(w_iter), fused_modconv=fused_modconv, **layer_kwargs)
-            #print("conv1 output shape: ", x.size())
+        
 
         # ToRGB.
         if img is not None:
@@ -530,7 +527,7 @@ class SynthesisNetwork(torch.nn.Module):
         self.img_channels = img_channels
         self.num_fp16_res = num_fp16_res
         self.block_resolutions = [2 ** i for i in range(2, self.img_resolution_log2 + 1)]
-        #print('block resolutions: ', self.block_resolutions)
+        
         channels_dict = {res: min(channel_base // res, channel_max) for res in self.block_resolutions}
         fp16_resolution = max(2 ** (self.img_resolution_log2 + 1 - num_fp16_res), 8)
 
@@ -548,7 +545,7 @@ class SynthesisNetwork(torch.nn.Module):
             setattr(self, f'b{res}', block)
 
     def forward(self, encoder_out, ws, **block_kwargs):
-        #print("w shape: ", ws.size())
+    
         block_ws = []
         with torch.autograd.profiler.record_function('split_ws'):
             misc.assert_shape(ws, [None, self.num_ws, self.w_dim])
@@ -562,10 +559,7 @@ class SynthesisNetwork(torch.nn.Module):
         x = img = None
         for res, cur_ws in zip(self.block_resolutions, block_ws):
             block = getattr(self, f'b{res}')
-            #print("cur_ws: ", cur_ws.size())
-            #print("enter block {}: ".format(res))
             x, img = block(encoder_out, x, img, cur_ws, **block_kwargs)
-            #print("exit block {}: ".format(res))
         return img
 
     def extra_repr(self):
@@ -773,8 +767,10 @@ class DiscriminatorEpilogue(torch.nn.Module):
         if self.mbstd is not None:
             x = self.mbstd(x)
         x = self.conv(x)
+        '''
         print("x before flatten: ", x.size())
         print("x.flatten(1): ", x.flatten(1).size())
+        '''
         x = self.fc(x.flatten(1))
         x = self.out(x)
 
