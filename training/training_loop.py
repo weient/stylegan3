@@ -173,6 +173,9 @@ def training_loop(
     rec_set = torch.from_numpy(rec_set)
     text_set = torch.from_numpy(text_set)
 
+    print("square set shape: ", square_set.size())
+    print("rec set shape: ", rec_set.size())
+    print("text set shape: ", text_set.size())
     square_set_iterator = iter(square_set)
     rec_set_iterator = iter(rec_set)
     text_set_iterator = iter(text_set)
