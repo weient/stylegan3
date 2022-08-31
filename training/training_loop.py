@@ -335,6 +335,7 @@ def training_loop(
             phase.module.requires_grad_(True)
             
             for box, real_img, real_img_rec, real_text, gen_z in zip(phase_box, phase_real_img, phase_real_rec, phase_real_text, phase_gen_z):
+                print("real_img shape: ", real_img.size())
                 loss.accumulate_gradients(bounding_box=box, phase=phase.name, real_img=real_img, real_img_rec=real_img_rec, real_text = real_text, real_c=None, gen_z=gen_z, gen_c=None, gain=phase.interval, cur_nimg=cur_nimg)
             phase.module.requires_grad_(False)
 
