@@ -312,12 +312,13 @@ def training_loop(
             phase_real_text = next(text_set_iterator)
             phase_box = next(box_iterator)
             phase_box = torch.Tensor(phase_box)
+            print("phase_box: ", phase_box)
 
             phase_real_img = (phase_real_img.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
             phase_real_text = (phase_real_text.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
             phase_real_rec = (phase_real_rec.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
-            phase_box = (phase_box.to(device).to(torch.float32))
-
+            phase_box = (phase_box.to(device).to(torch.float32)).split(batch_gpu)
+            print("after split: ", phase_box)
             all_gen_z = torch.randn([len(phases) * batch_size, G.z_dim], device=device)
             all_gen_z = [phase_gen_z.split(batch_gpu) for phase_gen_z in all_gen_z.split(batch_size)]
             '''
