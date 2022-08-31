@@ -87,7 +87,7 @@ class StyleGAN2Loss(Loss):
         if phase in ['Greg', 'Gboth']:
             with torch.autograd.profiler.record_function('Gpl_forward'):
                 batch_size = real_img.shape[0] // self.pl_batch_shrink
-                gen_img, gen_ws = self.run_G(bounding_box[:batch_size], real_img[:batch_size], real_text[:batch_size], gen_c[:batch_size])
+                gen_img, gen_ws = self.run_G(bounding_box[:batch_size], real_img[:batch_size], real_text[:batch_size], gen_c)
                 pl_noise = torch.randn_like(gen_img) / np.sqrt(gen_img.shape[2] * gen_img.shape[3])
                 with torch.autograd.profiler.record_function('pl_grads'), conv2d_gradfix.no_weight_gradients(self.pl_no_weight_grad):
                     pl_grads = torch.autograd.grad(outputs=[(gen_img * pl_noise).sum()], inputs=[gen_ws], create_graph=True, only_inputs=True)[0]
