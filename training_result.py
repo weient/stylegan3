@@ -29,8 +29,8 @@ def gen_img(pkl_path, bounding_box, img_style, img_text, c = None):
         G_ema = legacy.load_network_pkl(f)['G_ema'].to(device) # type: ignore
     with dnnlib.util.open_url(pkl_path) as f:
         G = legacy.load_network_pkl(f)['G'].to(device)
-    img = G(bounding_box, img_style, img_text, c)
-    img_ema = G_ema(bounding_box, img_style, img_text, c)
+    img = G(bounding_box, img_style, img_text, c, fused_modconv=False)
+    img_ema = G_ema(bounding_box, img_style, img_text, c, fused_modconv=False)
     img = (img.permute(0, 2, 3, 1) * 127.5 + 128).clamp(0, 255).to(torch.uint8)
     img_ema = (img_ema.permute(0, 2, 3, 1) * 127.5 + 128).clamp(0, 255).to(torch.uint8)
     
