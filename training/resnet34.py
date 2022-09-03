@@ -159,17 +159,11 @@ class style_encoder(BasicModule):
         '''
         avg = nn.AvgPool2d(16)  
         x = avg(x)  # reduce dimension to [1, 512, 1, 1]
-        '''
         print("shape before roi: ", x.size())
-        #tmp = [] 
-        #tmp.append(bounding_box)
-        #bounding_box = tmp
-        #device = torch.device('cuda')
-        #bounding_box = torch.Tensor(bounding_box).to(device)
         print(bounding_box)
         print("input bounding_box: ", bounding_box.size())
+        '''
         bounding_box = list(torch.split(bounding_box, 1))
-        #bounding_box = bounding_box[:, None, :]
 
         print(bounding_box)
         x = roi_align(x, bounding_box, output_size=1, spatial_scale=0.0625, aligned=True)
