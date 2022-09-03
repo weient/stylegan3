@@ -116,8 +116,6 @@ def modulated_conv2d(
     x = conv2d_resample.conv2d_resample(x=x, w=w.to(x.dtype), f=resample_filter, up=up, down=down, padding=padding, groups=batch_size, flip_weight=flip_weight)
     x = x.reshape(batch_size, -1, *x.shape[2:])
     if noise is not None:
-        print("noise shape: ", noise.size())
-        print("x shape: ", x.size())
         x = x.add_(noise)
     return x
 
