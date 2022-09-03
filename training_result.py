@@ -3,10 +3,19 @@ import numpy as np
 import PIL.Image
 import torch
 import legacy
+import os, sys
+import cv2
 
-
+def img_to_np(img_path):
+    img = []
+    im = PIL.Image.open(img_path).convert("RGB")
+    im = np.array(im)
+    im = im.transpose(2, 0, 1)
+    img.append(im)
+    img = np.array(img)
+    return img
     
-def gen_img(pkl_path, bounding_box, img_style, img_text, c):
+def gen_img(pkl_path, bounding_box, img_style, img_text, c = None):
     bounding_box = torch.Tensor([bounding_box])
     device = torch.device('cuda')
     with dnnlib.util.open_url(pkl_path) as f:
