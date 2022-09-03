@@ -13,6 +13,7 @@ def img_to_np(img_path):
     im = im.transpose(2, 0, 1)
     img.append(im)
     img = np.array(img)
+    img = torch.Tensor(img)
     return img
     
 def gen_img(pkl_path, bounding_box, img_style, img_text, c = None):
