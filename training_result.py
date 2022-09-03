@@ -7,6 +7,7 @@ import os, sys
 import cv2
 
 def img_to_np(img_path):
+    device = torch.device('cuda')
     img = []
     im = PIL.Image.open(img_path).convert("RGB")
     im = np.array(im)
@@ -14,6 +15,7 @@ def img_to_np(img_path):
     img.append(im)
     img = np.array(img)
     img = torch.Tensor(img)
+    img = img.to(device).to(torch.float32) / 127.5 - 1
     return img
     
 def gen_img(pkl_path, bounding_box, img_style, img_text, c = None):
