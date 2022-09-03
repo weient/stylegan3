@@ -1,4 +1,4 @@
-import dnnlib
+from . import dnnlib
 import numpy as np
 import PIL.Image
 import torch
