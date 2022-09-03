@@ -19,12 +19,12 @@ def img_to_np(img_path):
     return img
     
 def gen_img(pkl_path, bounding_box, img_style, img_text, c = None):
+    device = torch.device('cuda')
     bounding_box = torch.Tensor([bounding_box])
     bounding_box = bounding_box.to(device).to(torch.float32)
     img_style = img_to_np(img_style)
     img_text = img_to_np(img_text)
     
-    device = torch.device('cuda')
     with dnnlib.util.open_url(pkl_path) as f:
         G_ema = legacy.load_network_pkl(f)['G_ema'].to(device) # type: ignore
     with dnnlib.util.open_url(pkl_path) as f:
