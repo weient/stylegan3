@@ -94,13 +94,17 @@ def modulated_conv2d(
         '''
         x = conv2d_resample.conv2d_resample(x=x, w=weight.to(x.dtype), f=resample_filter, up=up, down=down, padding=padding, flip_weight=flip_weight)
         '''print("x'shape after resample: ", x.size())'''
+        # modify
         if demodulate and noise is not None:
+            x = fma.fma(x, dcoefs.to(x.dtype).reshape(batch_size, -1, 1, 1), noise.to(x.dtype))
+            '''
             x_list = split_input(x)
             fma_out = []
             for x in x_list:
                 tmp = fma.fma(x, dcoefs.to(x.dtype).reshape(batch_size, -1, 1, 1), noise.to(x.dtype))
                 fma_out.append(tmp)
             x = merge_input(fma_out)
+            '''
         elif demodulate:
             x = x * dcoefs.to(x.dtype).reshape(batch_size, -1, 1, 1)
         elif noise is not None:
@@ -338,7 +342,8 @@ class SynthesisLayer(torch.nn.Module):
         memory_format = torch.channels_last if channels_last else torch.contiguous_format
         self.weight = torch.nn.Parameter(torch.randn([out_channels, in_channels, kernel_size, kernel_size]).to(memory_format=memory_format))
         if use_noise:
-            self.register_buffer('noise_const', torch.randn([resolution, resolution]))
+            # modify
+            self.register_buffer('noise_const', torch.randn([resolution, resolution*4]))
             self.noise_strength = torch.nn.Parameter(torch.zeros([]))
         self.bias = torch.nn.Parameter(torch.zeros([out_channels]))
 
@@ -350,10 +355,10 @@ class SynthesisLayer(torch.nn.Module):
         styles = self.affine(w)
 
         noise = None
-        if self.use_noise and noise_mode == 'random':
-            noise = torch.randn([x.shape[0], 1, self.resolution, self.resolution], device=x.device) * self.noise_strength
+        if self.use_noise and noise_mode == 'random': # modify
+            noise = torch.randn([x.shape[0], 1, self.resolution, self.resolution*4], device=x.device) * self.noise_strength
         if self.use_noise and noise_mode == 'const':
-            noise = self.noise_const * self.noise_strength
+            noise = self.noise_const * self.noise_strength 
 
         flip_weight = (self.up == 1) # slightly faster
         x = modulated_conv2d(x=x, weight=self.weight, styles=styles, noise=noise, up=self.up,
