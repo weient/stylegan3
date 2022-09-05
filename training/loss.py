@@ -7,13 +7,14 @@
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 
 """Loss functions."""
-
+import string
+import argparse
 import numpy as np
 import torch
 from ..torch_utils import training_stats
 from ..torch_utils.ops import conv2d_gradfix
 from ..torch_utils.ops import upfirdn2d
-
+from ...OCR.demo import *
 #----------------------------------------------------------------------------
 
 class Loss:
@@ -21,6 +22,15 @@ class Loss:
         raise NotImplementedError()
 
 #----------------------------------------------------------------------------
+def call_OCR(img_tensor, batch_size):
+    dic = {"image_folder":img_tensor, "workers":1, "batch_size": batch_size, "saved_model":'/content/drive/Shareddrives/styleGAN3/TPS-ResNet-BiLSTM-Attn-case-sensitive.pth', "batch_max_length":25,
+    "imgH":64, "imgW":256, "rgb":False, "character":string.printable[:-6],
+    "sensitive":True, "PAD":False, "Transformation":'TPS', "FeatureExtraction":'ResNet', 
+    "SequenceModeling":'BiLSTM', "Prediction":'Attn', "num_fiducial":20, "input_channel":3, 
+    "output_channel": 512, "hidden_size":256, "num_gpu":torch.cuda.device_count()}
+    opt = argparse.Namespace(**dic)
+    str_list = demo(opt)
+    print("OCR str_list: ", str_list)
 
 class StyleGAN2Loss(Loss):
     def __init__(self, device, G, D, augment_pipe=None, r1_gamma=10, style_mixing_prob=0, pl_weight=0, pl_batch_shrink=2, pl_decay=0.01, pl_no_weight_grad=False, blur_init_sigma=0, blur_fade_kimg=0):
@@ -72,11 +82,12 @@ class StyleGAN2Loss(Loss):
         if self.r1_gamma == 0:
             phase = {'Dreg': 'none', 'Dboth': 'Dmain'}.get(phase, phase)
         blur_sigma = max(1 - cur_nimg / (self.blur_fade_kimg * 1e3), 0) * self.blur_init_sigma if self.blur_fade_kimg > 0 else 0
-
+        
         # Gmain: Maximize logits for generated images.
         if phase in ['Gmain', 'Gboth']:
             with torch.autograd.profiler.record_function('Gmain_forward'):
                 gen_img, _gen_ws = self.run_G(bounding_box, real_img, real_text, gen_c)
+                call_OCR(gen_img, real_img.shape[0])
                 gen_logits = self.run_D(gen_img, gen_c, blur_sigma=blur_sigma)
                 training_stats.report('Loss/scores/fake', gen_logits)
                 training_stats.report('Loss/signs/fake', gen_logits.sign())
@@ -90,6 +101,7 @@ class StyleGAN2Loss(Loss):
             with torch.autograd.profiler.record_function('Gpl_forward'):
                 batch_size = real_img.shape[0] // self.pl_batch_shrink
                 gen_img, gen_ws = self.run_G(bounding_box[:batch_size], real_img[:batch_size], real_text[:batch_size], gen_c)
+                call_OCR(gen_img, batch_size)
                 pl_noise = torch.randn_like(gen_img) / np.sqrt(gen_img.shape[2] * gen_img.shape[3])
                 with torch.autograd.profiler.record_function('pl_grads'), conv2d_gradfix.no_weight_gradients(self.pl_no_weight_grad):
                     pl_grads = torch.autograd.grad(outputs=[(gen_img * pl_noise).sum()], inputs=[gen_ws], create_graph=True, only_inputs=True)[0]
@@ -108,6 +120,7 @@ class StyleGAN2Loss(Loss):
         if phase in ['Dmain', 'Dboth']:
             with torch.autograd.profiler.record_function('Dgen_forward'):
                 gen_img, _gen_ws = self.run_G(bounding_box, real_img, real_text, gen_c, update_emas=True)
+                call_OCR(gen_img, real_img.shape[0])
                 gen_logits = self.run_D(gen_img, gen_c, blur_sigma=blur_sigma, update_emas=True)
                 training_stats.report('Loss/scores/fake', gen_logits)
                 training_stats.report('Loss/signs/fake', gen_logits.sign())
