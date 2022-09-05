@@ -26,7 +26,7 @@ def call_OCR(img_tensor, batch_size):
     dic = {"image_folder":img_tensor, "workers":1, "batch_size": batch_size, "saved_model":'/content/drive/Shareddrives/styleGAN3/TPS-ResNet-BiLSTM-Attn-case-sensitive.pth', "batch_max_length":25,
     "imgH":64, "imgW":256, "rgb":False, "character":string.printable[:-6],
     "sensitive":True, "PAD":False, "Transformation":'TPS', "FeatureExtraction":'ResNet', 
-    "SequenceModeling":'BiLSTM', "Prediction":'Attn', "num_fiducial":20, "input_channel":3, 
+    "SequenceModeling":'BiLSTM', "Prediction":'Attn', "num_fiducial":20, "input_channel":1, 
     "output_channel": 512, "hidden_size":256, "num_gpu":torch.cuda.device_count()}
     opt = argparse.Namespace(**dic)
     str_list = demo(opt)
