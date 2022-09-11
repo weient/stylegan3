@@ -479,7 +479,7 @@ class SynthesisBlock(torch.nn.Module):
                 conv_clamp=conv_clamp, channels_last=self.channels_last)
             self.num_torgb += 1
         # setting mask layer
-        self.mask = ToMaskLayer(out_channels, 1, w_dim=w_dim, conv_clamp=conv_clamp, channels_last=self.channels_last)
+        self.mask = ToMaskLayer(3, 1, w_dim=w_dim, conv_clamp=conv_clamp, channels_last=self.channels_last)
         
         if in_channels != 0 and architecture == 'resnet':
             self.skip = Conv2dLayer(in_channels, out_channels, kernel_size=1, bias=False, up=2,
