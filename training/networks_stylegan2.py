@@ -589,8 +589,8 @@ class SynthesisNetwork(torch.nn.Module):
             block = SynthesisBlock(in_channels, out_channels, w_dim=w_dim, resolution=res,
                 img_channels=img_channels, is_last=is_last, use_fp16=use_fp16, **block_kwargs)
             self.num_ws += (block.num_conv + block.num_torgb)
-            #if is_last:
-            #    self.num_ws += block.num_torgb
+            if is_last:
+                self.num_ws += 1
             setattr(self, f'b{res}', block)
 
     def forward(self, encoder_out, ws, **block_kwargs):
