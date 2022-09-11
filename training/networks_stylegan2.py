@@ -530,7 +530,7 @@ class SynthesisBlock(torch.nn.Module):
             img = upfirdn2d.upsample2d(img, self.resample_filter)
         # 不知道 up param 要不要設定qqqq
         if Mask is not None:
-            Mask = upfirdn2d.upsample2d(img, self.resample_filter)
+            Mask = upfirdn2d.upsample2d(Mask, self.resample_filter)
         
         if self.is_last or self.architecture == 'skip':
             
