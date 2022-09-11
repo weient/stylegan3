@@ -488,7 +488,7 @@ class SynthesisBlock(torch.nn.Module):
     # input param 要加上 Mask 這個變數、return 要加上回傳的 Mask
     def forward(self, encoder_out, x, img, Mask, ws, force_fp32=False, fused_modconv=None, update_emas=False, **layer_kwargs):
         _ = update_emas # unused
-        misc.assert_shape(ws, [None, self.num_conv + self.num_torgb, self.w_dim])
+        misc.assert_shape(ws, [None, self.num_conv + self.num_torgb + 1, self.w_dim])
         w_iter = iter(ws.unbind(dim=1))
         if ws.device.type != 'cuda':
             force_fp32 = True
