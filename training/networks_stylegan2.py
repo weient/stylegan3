@@ -644,7 +644,7 @@ class Generator(torch.nn.Module):
         self.synthesis = SynthesisNetwork(w_dim=w_dim, img_resolution=img_resolution, img_channels=img_channels, **synthesis_kwargs)
         self.num_ws = self.synthesis.num_ws
         self.mapping = MappingNetwork(z_dim=z_dim, c_dim=c_dim, w_dim=w_dim, num_ws=self.num_ws, **mapping_kwargs)
-
+        print("num_ws: ", self.num_ws)
     def forward(self, bounding_box, img_style, img_text, c, truncation_psi=1, truncation_cutoff=None, update_emas=False, **synthesis_kwargs):
         style_out = self.style_encoder(img_style, bounding_box)
         content_out = self.content_encoder(img_text)
