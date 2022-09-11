@@ -375,7 +375,6 @@ class SynthesisLayer(torch.nn.Module):
             f'resolution={self.resolution:d}, up={self.up}, activation={self.activation:s}'])
 
 #----------------------------------------------------------------------------
-
 #@persistence.persistent_class
 class ToRGBLayer(torch.nn.Module):
     def __init__(self, in_channels, out_channels, w_dim, kernel_size=1, conv_clamp=None, channels_last=False):
@@ -400,7 +399,32 @@ class ToRGBLayer(torch.nn.Module):
         return f'in_channels={self.in_channels:d}, out_channels={self.out_channels:d}, w_dim={self.w_dim:d}'
 
 #----------------------------------------------------------------------------
+class ToMaskLayer(torch.nn.Module):
+    def __init__(self, in_channels, out_channels, w_dim, kernel_size=1, conv_clamp=None, channels_last=False):
+        super().__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.w_dim = w_dim
+        self.conv_clamp = conv_clamp
+        self.affine = FullyConnectedLayer(w_dim, in_channels, bias_init=1)
+        memory_format = torch.channels_last if channels_last else torch.contiguous_format
+        self.weight = torch.nn.Parameter(torch.randn([out_channels, in_channels, kernel_size, kernel_size]).to(memory_format=memory_format))
+        self.bias = torch.nn.Parameter(torch.zeros([out_channels]))
+        self.weight_gain = 1 / np.sqrt(in_channels * (kernel_size ** 2))
+    
+    def forward(self, x, w, fused_modconv=True):
+        styles = self.affine(w) * self.weight_gain
+        x = modulated_conv2d(x=x, weight=self.weight, styles=styles, demodulate=False, fused_modconv=fused_modconv)
+        x = bias_act.bias_act(x, self.bias.to(x.dtype), act='sigmoid', clamp=self.conv_clamp)
+        return x
 
+    def extra_repr(self):
+        return f'in_channels={self.in_channels:d}, out_channels={self.out_channels:d}, w_dim={self.w_dim:d}'
+
+#----------------------------------------------------------------------------
+def sum_img(img):
+    img = torch.mean(img, dim=1)
+    return img
 #@persistence.persistent_class
 class SynthesisBlock(torch.nn.Module):
     def __init__(self,
@@ -438,6 +462,8 @@ class SynthesisBlock(torch.nn.Module):
         #    self.const = encoder_out # should be 512x4x4
         #    print('first layer output channel: ', out_channels)
         #    self.const = torch.nn.Parameter(torch.randn([out_channels, resolution, resolution]))
+        self.mask_conv = Conv2dLayer(2, 1, 1)
+        #self.softmax = torch.nn.Softmax(dim=1)
 
         if in_channels != 0:
             self.conv0 = SynthesisLayer(in_channels, out_channels, w_dim=w_dim, resolution=resolution, up=2,
@@ -452,12 +478,15 @@ class SynthesisBlock(torch.nn.Module):
             self.torgb = ToRGBLayer(out_channels, img_channels, w_dim=w_dim,
                 conv_clamp=conv_clamp, channels_last=self.channels_last)
             self.num_torgb += 1
-
+        # setting mask layer
+        self.mask = ToMaskLayer(out_channels, 1, w_dim=w_dim, conv_clamp=conv_clamp, channels_last=self.channels_last)
+        
         if in_channels != 0 and architecture == 'resnet':
             self.skip = Conv2dLayer(in_channels, out_channels, kernel_size=1, bias=False, up=2,
                 resample_filter=resample_filter, channels_last=self.channels_last)
 
-    def forward(self, encoder_out, x, img, ws, force_fp32=False, fused_modconv=None, update_emas=False, **layer_kwargs):
+    # input param 要加上 Mask 這個變數、return 要加上回傳的 Mask
+    def forward(self, encoder_out, x, img, Mask, ws, force_fp32=False, fused_modconv=None, update_emas=False, **layer_kwargs):
         _ = update_emas # unused
         misc.assert_shape(ws, [None, self.num_conv + self.num_torgb, self.w_dim])
         w_iter = iter(ws.unbind(dim=1))
@@ -498,15 +527,30 @@ class SynthesisBlock(torch.nn.Module):
         if img is not None:
             #misc.assert_shape(img, [None, self.img_channels, self.resolution // 2, self.resolution // 2])
             img = upfirdn2d.upsample2d(img, self.resample_filter)
+        # 不知道 up param 要不要設定qqqq
+        if Mask is not None:
+            Mask = upfirdn2d.upsample2d(img, self.resample_filter)
+        
         if self.is_last or self.architecture == 'skip':
             
             y = self.torgb(x, next(w_iter), fused_modconv=fused_modconv)
             y = y.to(dtype=torch.float32, memory_format=torch.contiguous_format)
+            
             img = img.add_(y) if img is not None else y
+            m = self.mask(img, next(w_iter), fused_modconv=fused_modconv)
+            if Mask is None:
+                Mask = sum_img(img)
+            Mask = torch.cat((Mask, m), dim=1)
+            Mask = self.mask_conv(Mask)
+
+            # m 是 RGB 圖片做 modulated_conv 出來的東西（channel dim of m = 1）
+            # 接下來要跟 Mask 做 channel wise concat
+            # concat 出來再做普通的 conv
+            # 目前問題：要怎麼做 channel wise concat？
         
         assert x.dtype == dtype
         assert img is None or img.dtype == torch.float32
-        return x, img
+        return x, img, Mask
 
     def extra_repr(self):
         return f'resolution={self.resolution:d}, architecture={self.architecture:s}'
@@ -558,14 +602,15 @@ class SynthesisNetwork(torch.nn.Module):
             w_idx = 0
             for res in self.block_resolutions:
                 block = getattr(self, f'b{res}')
-                block_ws.append(ws.narrow(1, w_idx, block.num_conv + block.num_torgb))
-                w_idx += block.num_conv
+                # 更改 w 的切割區間
+                block_ws.append(ws.narrow(1, w_idx, block.num_conv + block.num_torgb + 1))
+                w_idx += block.num_conv + block.num_torgb
 
-        x = img = None
+        x = img = Mask = None
         for res, cur_ws in zip(self.block_resolutions, block_ws):
             block = getattr(self, f'b{res}')
-            x, img = block(encoder_out, x, img, cur_ws, **block_kwargs)
-        return img
+            x, img, Mask = block(encoder_out, x, img, Mask, cur_ws, **block_kwargs)
+        return img, Mask
 
     def extra_repr(self):
         return ' '.join([
@@ -604,8 +649,8 @@ class Generator(torch.nn.Module):
         style_out = self.style_encoder(img_style, bounding_box)
         content_out = self.content_encoder(img_text)
         ws = self.mapping(style_out, c, truncation_psi=truncation_psi, truncation_cutoff=truncation_cutoff, update_emas=update_emas)
-        img = self.synthesis(content_out, ws, update_emas=update_emas, **synthesis_kwargs)
-        return img
+        img, Mask = self.synthesis(content_out, ws, update_emas=update_emas, **synthesis_kwargs)
+        return img, Mask
 
 #----------------------------------------------------------------------------
 
