@@ -424,6 +424,7 @@ class ToMaskLayer(torch.nn.Module):
 #----------------------------------------------------------------------------
 def sum_img(img):
     img = torch.mean(img, dim=1)
+    print("img dim: ", img.size())
     return img
 #@persistence.persistent_class
 class SynthesisBlock(torch.nn.Module):
