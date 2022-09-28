@@ -89,6 +89,8 @@ class StyleGAN2Loss(Loss):
                 gen_img, _gen_ws, gen_Mask = self.run_G(bounding_box, real_img, real_text, gen_c)
                 loss_rec = torch.nn.functional.l1_loss(gen_img, real_img_rec)
                 print("loss_rec: ", loss_rec)
+                print("fake img: ", gen_img.size())
+                print("real img: ", real_img_rec.size())
                 call_OCR(gen_img, real_img.shape[0])
                 gen_logits = self.run_D(gen_img, gen_c, blur_sigma=blur_sigma)
                 training_stats.report('Loss/scores/fake', gen_logits)

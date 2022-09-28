@@ -165,11 +165,11 @@ class style_encoder(BasicModule):
         '''
         bounding_box = list(torch.split(bounding_box, 1))
 
-        print(bounding_box)
+        #print(bounding_box)
         x = roi_align(x, bounding_box, output_size=1, spatial_scale=0.0625, aligned=True)
-        print("shape after roi: ", x.size())
+        #print("shape after roi: ", x.size())
         
         x = x.view(x.size(0), -1) # flatten tensor to [1, 512]
-        print("shape after view: ", x.size())
+        #print("shape after view: ", x.size())
         return x
  
