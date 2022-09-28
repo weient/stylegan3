@@ -87,6 +87,8 @@ class StyleGAN2Loss(Loss):
         if phase in ['Gmain', 'Gboth']:
             with torch.autograd.profiler.record_function('Gmain_forward'):
                 gen_img, _gen_ws, gen_Mask = self.run_G(bounding_box, real_img, real_text, gen_c)
+                loss_rec = torch.nn.functional.l1_loss(gen_img, real_img_rec)
+                print("loss_rec: ", loss_rec)
                 call_OCR(gen_img, real_img.shape[0])
                 gen_logits = self.run_D(gen_img, gen_c, blur_sigma=blur_sigma)
                 training_stats.report('Loss/scores/fake', gen_logits)
@@ -102,6 +104,8 @@ class StyleGAN2Loss(Loss):
                 batch_size = real_img.shape[0] // self.pl_batch_shrink
                 gen_img, gen_ws, gen_Mask = self.run_G(bounding_box[:batch_size], real_img[:batch_size], real_text[:batch_size], gen_c)
                 call_OCR(gen_img, batch_size)
+                loss_rec = torch.nn.functional.l1_loss(gen_img, real_img_rec[:batch_size])
+                print("loss_rec: ", loss_rec)
                 pl_noise = torch.randn_like(gen_img) / np.sqrt(gen_img.shape[2] * gen_img.shape[3])
                 with torch.autograd.profiler.record_function('pl_grads'), conv2d_gradfix.no_weight_gradients(self.pl_no_weight_grad):
                     pl_grads = torch.autograd.grad(outputs=[(gen_img * pl_noise).sum()], inputs=[gen_ws], create_graph=True, only_inputs=True)[0]
@@ -136,7 +140,7 @@ class StyleGAN2Loss(Loss):
                 real_img_tmp = real_img_rec.detach().requires_grad_(phase in ['Dreg', 'Dboth'])
                 #real_img_tmp = real_img.detach().requires_grad_(phase in ['Dreg', 'Dboth'])
                 real_logits = self.run_D(real_img_tmp, real_c, blur_sigma=blur_sigma)
-                #real_logits = self.run_D(real_img_tmp, real_c, blur_sigma=blur_sigma)
+
                 training_stats.report('Loss/scores/real', real_logits)
                 training_stats.report('Loss/signs/real', real_logits.sign())
 
