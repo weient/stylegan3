@@ -108,11 +108,10 @@ class StyleGAN2Loss(Loss):
             with torch.autograd.profiler.record_function('Gmain_forward'):
                 gen_img, _gen_ws, gen_Mask = self.run_G(bounding_box, real_img, real_text, gen_c)
                 cyc_img = paste_img(real_img, gen_img, real_img.shape[0])
-                print("cyc_img shape: ", cyc_img.size())
+                gen_img_2, _gen_ws_2, gen_Mask_2 = self.run_G(bounding_box, cyc_img, real_text, gen_c)
+                print("gen_img_2: ", gen_img_2.size())
                 loss_rec = torch.nn.functional.l1_loss(gen_img, real_img_rec)
                 print("loss_rec: ", loss_rec)
-                print("fake img: ", gen_img.size())
-                print("real img: ", real_img_rec.size())
                 call_OCR(gen_img, real_img.shape[0])
                 gen_logits = self.run_D(gen_img, gen_c, blur_sigma=blur_sigma)
                 training_stats.report('Loss/scores/fake', gen_logits)
@@ -128,7 +127,8 @@ class StyleGAN2Loss(Loss):
                 batch_size = real_img.shape[0] // self.pl_batch_shrink
                 gen_img, gen_ws, gen_Mask = self.run_G(bounding_box[:batch_size], real_img[:batch_size], real_text[:batch_size], gen_c)
                 cyc_img = paste_img(real_img[:batch_size], gen_img, batch_size)
-                print("cyc_img shape: ", cyc_img.size())
+                gen_img_2, _gen_ws_2, gen_Mask_2 = self.run_G(bounding_box[:batch_size], cyc_img, real_text[:batch_size], gen_c)
+                print("gen_img_2: ", gen_img_2.size())
                 call_OCR(gen_img, batch_size)
                 loss_rec = torch.nn.functional.l1_loss(gen_img, real_img_rec[:batch_size])
                 print("loss_rec: ", loss_rec)
