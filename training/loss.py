@@ -15,6 +15,12 @@ from ..torch_utils import training_stats
 from ..torch_utils.ops import conv2d_gradfix
 from ..torch_utils.ops import upfirdn2d
 from ..OCR.demo import *
+
+import torch
+import torchvision
+import torchvision.transforms as T
+from PIL import Image
+from IPython.display import Image
 #----------------------------------------------------------------------------
 
 class Loss:
@@ -31,6 +37,20 @@ def call_OCR(img_tensor, batch_size):
     opt = argparse.Namespace(**dic)
     str_list = demo(opt)
     print("OCR str_list: ", str_list)
+
+def paste_img(tensor_square, tensor_gen, batch_size):
+    transform = T.ToPILImage()
+    transform_back = T.ToTensor()
+    cyclic_list = []
+    for i in range(batch_size):
+        img_square = transform(tensor_square[i])
+        img_gen = transform(tensor_gen[i])
+        new_square = img_square.copy()
+        new_square.paste(img_gen, (0, 96))
+        new_square_tensor = transform_back(new_square)
+        cyclic_list.append(torch.unsqueeze(new_square_tensor, 0))
+    cyclic_tensor = torch.cat(cyclic_list, 0)
+    return cyclic_tensor
 
 class StyleGAN2Loss(Loss):
     def __init__(self, device, G, D, augment_pipe=None, r1_gamma=10, style_mixing_prob=0, pl_weight=0, pl_batch_shrink=2, pl_decay=0.01, pl_no_weight_grad=False, blur_init_sigma=0, blur_fade_kimg=0):
@@ -87,6 +107,8 @@ class StyleGAN2Loss(Loss):
         if phase in ['Gmain', 'Gboth']:
             with torch.autograd.profiler.record_function('Gmain_forward'):
                 gen_img, _gen_ws, gen_Mask = self.run_G(bounding_box, real_img, real_text, gen_c)
+                cyc_img = paste_img(real_img, gen_img, real_img.shape[0])
+                print("cyc_img shape: ", cyc_img.size())
                 loss_rec = torch.nn.functional.l1_loss(gen_img, real_img_rec)
                 print("loss_rec: ", loss_rec)
                 print("fake img: ", gen_img.size())
@@ -105,6 +127,8 @@ class StyleGAN2Loss(Loss):
             with torch.autograd.profiler.record_function('Gpl_forward'):
                 batch_size = real_img.shape[0] // self.pl_batch_shrink
                 gen_img, gen_ws, gen_Mask = self.run_G(bounding_box[:batch_size], real_img[:batch_size], real_text[:batch_size], gen_c)
+                cyc_img = paste_img(real_img[:batch_size], gen_img, batch_size)
+                print("cyc_img shape: ", cyc_img.size())
                 call_OCR(gen_img, batch_size)
                 loss_rec = torch.nn.functional.l1_loss(gen_img, real_img_rec[:batch_size])
                 print("loss_rec: ", loss_rec)
