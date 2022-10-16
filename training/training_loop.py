@@ -319,7 +319,7 @@ def training_loop(
             phase_real_text = (phase_real_text.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
             phase_real_rec = (phase_real_rec.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
             phase_box = (phase_box.to(device).to(torch.float32)).split(batch_gpu)
-            phase_word = phase_word.split(batch_gpu)
+            #phase_word = phase_word.split(batch_gpu)
 
             all_gen_z = torch.randn([len(phases) * batch_size, G.z_dim], device=device)
             all_gen_z = [phase_gen_z.split(batch_gpu) for phase_gen_z in all_gen_z.split(batch_size)]
