@@ -183,6 +183,7 @@ def training_loop(
     text_set_iterator = iter(text_set)
     box_iterator = iter(boxes)
     word_iterator = iter(strings)
+    print("strings :", strings)
     '''
     square_set_iterator = iter(torch.utils.data.DataLoader(dataset=square_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
     training_set_iterator = iter(torch.rand(300, 4, 3, 256, 256))

@@ -107,6 +107,8 @@ class StyleGAN2Loss(Loss):
         if phase in ['Gmain', 'Gboth']:
             with torch.autograd.profiler.record_function('Gmain_forward'):
                 gen_img, _gen_ws, gen_Mask = self.run_G(bounding_box, real_img, real_text, gen_c)
+                gen_Mask = torch.cat((gen_Mask, gen_Mask, gen_Mask), 1)
+                print("mask shape: ", gen_Mask.size())
                 cyc_img = paste_img(real_img, gen_img, real_img.shape[0])
                 cyc_img = cyc_img.to(self.device)
                 gen_img_2, _gen_ws_2, gen_Mask_2 = self.run_G(bounding_box, cyc_img, real_text, gen_c)
@@ -128,6 +130,7 @@ class StyleGAN2Loss(Loss):
             with torch.autograd.profiler.record_function('Gpl_forward'):
                 batch_size = real_img.shape[0] // self.pl_batch_shrink
                 gen_img, gen_ws, gen_Mask = self.run_G(bounding_box[:batch_size], real_img[:batch_size], real_text[:batch_size], gen_c)
+                gen_Mask = torch.cat((gen_Mask, gen_Mask, gen_Mask), 1)
                 cyc_img = paste_img(real_img[:batch_size], gen_img, batch_size)
                 cyc_img = cyc_img.to(self.device)
                 gen_img_2, _gen_ws_2, gen_Mask_2 = self.run_G(bounding_box[:batch_size], cyc_img, real_text[:batch_size], gen_c)
