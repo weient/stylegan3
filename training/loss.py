@@ -21,6 +21,8 @@ import torchvision
 import torchvision.transforms as T
 from PIL import Image
 from IPython.display import Image
+import sys
+from torch.nn.functional import cross_entropy
 #----------------------------------------------------------------------------
 
 class Loss:
@@ -28,7 +30,17 @@ class Loss:
         raise NotImplementedError()
 
 #----------------------------------------------------------------------------
-def call_OCR(img_tensor, batch_size):
+
+def to_onehot(input, max_length):
+    characters = string.printable  # All printable ASCII characters.
+    token_index = dict(zip(characters, range(1, len(characters) + 1)))
+    results = np.zeros((len(input), max_length, max(token_index.values()) + 1))
+    for i, sample in enumerate(input):
+        for j, character in enumerate(sample[:max_length]):
+            index = token_index.get(character)
+            results[i, j, index] = 1.
+    return results
+def call_OCR(img_tensor, batch_size, word_label):
     dic = {"image_folder":img_tensor, "workers":1, "batch_size": batch_size, "saved_model":'/content/drive/Shareddrives/styleGAN3/TPS-ResNet-BiLSTM-Attn-case-sensitive.pth', "batch_max_length":25,
     "imgH":32, "imgW":100, "rgb":False, "character":string.printable[:-6],
     "sensitive":True, "PAD":False, "Transformation":'TPS', "FeatureExtraction":'ResNet', 
@@ -37,6 +49,19 @@ def call_OCR(img_tensor, batch_size):
     opt = argparse.Namespace(**dic)
     str_list = demo(opt)
     print("OCR str_list: ", str_list)
+    input_l = []
+    target_l = []
+    for i, j in enumerate(str_list):
+        max_length = max(len(str_list[i]), len(word_label[i]))
+        input = torch.from_numpy(to_onehot([str_list[i]], max_length))
+        target = torch.from_numpy(to_onehot([word_label[i]], max_length))
+        input_l.append(input)
+        target_l.append(target)
+    input = torch.cat(input_l, 0)
+    target = torch.cat(target_l, 0)
+    print("input:", input.size(), "target: ", target.size())
+    return cross_entropy(input, target)
+
 
 def paste_img(tensor_square, tensor_gen, batch_size):
     transform = T.ToPILImage()
@@ -102,7 +127,7 @@ class StyleGAN2Loss(Loss):
         if self.r1_gamma == 0:
             phase = {'Dreg': 'none', 'Dboth': 'Dmain'}.get(phase, phase)
         blur_sigma = max(1 - cur_nimg / (self.blur_fade_kimg * 1e3), 0) * self.blur_init_sigma if self.blur_fade_kimg > 0 else 0
-        print("word_label: ", word_label)
+        #print("word_label: ", word_label)
         # Gmain: Maximize logits for generated images.
         if phase in ['Gmain', 'Gboth']:
             with torch.autograd.profiler.record_function('Gmain_forward'):
@@ -114,9 +139,10 @@ class StyleGAN2Loss(Loss):
                 gen_img_2, _gen_ws_2, gen_Mask_2 = self.run_G(bounding_box, cyc_img, real_text, gen_c)
                 loss_cyc = torch.nn.functional.l1_loss(gen_img_2, real_img_rec)
                 loss_rec = torch.nn.functional.l1_loss(gen_img, real_img_rec)
+                loss_R = call_OCR(gen_Mask, real_img.shape[0], word_label)
                 print("loss_cyc: ", loss_cyc)
                 print("loss_rec: ", loss_rec)
-                call_OCR(gen_Mask, real_img.shape[0])
+                print("loss_R: ", loss_R)
                 gen_logits = self.run_D(gen_img, gen_c, blur_sigma=blur_sigma)
                 training_stats.report('Loss/scores/fake', gen_logits)
                 training_stats.report('Loss/signs/fake', gen_logits.sign())
@@ -135,10 +161,11 @@ class StyleGAN2Loss(Loss):
                 cyc_img = cyc_img.to(self.device)
                 gen_img_2, _gen_ws_2, gen_Mask_2 = self.run_G(bounding_box[:batch_size], cyc_img, real_text[:batch_size], gen_c)
                 loss_cyc = torch.nn.functional.l1_loss(gen_img_2, real_img_rec[:batch_size])
-                call_OCR(gen_Mask, batch_size)
+                loss_R = call_OCR(gen_Mask, batch_size, word_label)
                 loss_rec = torch.nn.functional.l1_loss(gen_img, real_img_rec[:batch_size])
                 print("loss_cyc: ", loss_cyc)
                 print("loss_rec: ", loss_rec)
+                print("loss_R: ", loss_R)
                 pl_noise = torch.randn_like(gen_img) / np.sqrt(gen_img.shape[2] * gen_img.shape[3])
                 with torch.autograd.profiler.record_function('pl_grads'), conv2d_gradfix.no_weight_gradients(self.pl_no_weight_grad):
                     pl_grads = torch.autograd.grad(outputs=[(gen_img * pl_noise).sum()], inputs=[gen_ws], create_graph=True, only_inputs=True)[0]
