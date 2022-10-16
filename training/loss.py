@@ -51,8 +51,8 @@ def call_OCR(img_tensor, batch_size, word_label):
     print("OCR str_list: ", str_list)
     input_l = []
     target_l = []
+    max_length = 15
     for i, j in enumerate(str_list):
-        max_length = max(len(str_list[i]), len(word_label[i]))
         input = torch.from_numpy(to_onehot([str_list[i]], max_length))
         target = torch.from_numpy(to_onehot([word_label[i]], max_length))
         input_l.append(input)
