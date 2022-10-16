@@ -182,6 +182,7 @@ def training_loop(
     rec_set_iterator = iter(rec_set)
     text_set_iterator = iter(text_set)
     box_iterator = iter(boxes)
+    word_iterator = iter(strings)
     '''
     square_set_iterator = iter(torch.utils.data.DataLoader(dataset=square_set, batch_size=batch_size//num_gpus, shuffle=False, **data_loader_kwargs))
     training_set_iterator = iter(torch.rand(300, 4, 3, 256, 256))
@@ -312,13 +313,14 @@ def training_loop(
             phase_real_text = next(text_set_iterator)
             phase_box = next(box_iterator)
             phase_box = torch.Tensor(phase_box)
-            
+            phase_word = next(word_iterator)
 
             phase_real_img = (phase_real_img.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
             phase_real_text = (phase_real_text.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
             phase_real_rec = (phase_real_rec.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
             phase_box = (phase_box.to(device).to(torch.float32)).split(batch_gpu)
-            
+            phase_word = phase_word.split(batch_gpu)
+
             all_gen_z = torch.randn([len(phases) * batch_size, G.z_dim], device=device)
             all_gen_z = [phase_gen_z.split(batch_gpu) for phase_gen_z in all_gen_z.split(batch_size)]
             '''
@@ -339,8 +341,8 @@ def training_loop(
             phase.module.requires_grad_(True)
             
             
-            for box, real_img, real_img_rec, real_text, gen_z in zip(phase_box, phase_real_img, phase_real_rec, phase_real_text, phase_gen_z):
-                loss.accumulate_gradients(bounding_box=box, phase=phase.name, real_img=real_img, real_img_rec=real_img_rec, real_text = real_text, real_c=None, gen_z=gen_z, gen_c=None, gain=phase.interval, cur_nimg=cur_nimg)
+            for box, real_img, real_img_rec, real_text, word, gen_z in zip(phase_box, phase_real_img, phase_real_rec, phase_real_text, phase_word, phase_gen_z):
+                loss.accumulate_gradients(bounding_box=box, phase=phase.name, real_img=real_img, real_img_rec=real_img_rec, real_text = real_text, word_label = word, real_c=None, gen_z=gen_z, gen_c=None, gain=phase.interval, cur_nimg=cur_nimg)
             phase.module.requires_grad_(False)
 
             # Update weights.

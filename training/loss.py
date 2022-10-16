@@ -95,14 +95,14 @@ class StyleGAN2Loss(Loss):
         logits = self.D(img, c, update_emas=update_emas)
         return logits
 
-    def accumulate_gradients(self, bounding_box, phase, real_img, real_img_rec, real_text, real_c, gen_z, gen_c, gain, cur_nimg):
+    def accumulate_gradients(self, bounding_box, phase, real_img, real_img_rec, real_text, word_label, real_c, gen_z, gen_c, gain, cur_nimg):
         assert phase in ['Gmain', 'Greg', 'Gboth', 'Dmain', 'Dreg', 'Dboth']
         if self.pl_weight == 0:
             phase = {'Greg': 'none', 'Gboth': 'Gmain'}.get(phase, phase)
         if self.r1_gamma == 0:
             phase = {'Dreg': 'none', 'Dboth': 'Dmain'}.get(phase, phase)
         blur_sigma = max(1 - cur_nimg / (self.blur_fade_kimg * 1e3), 0) * self.blur_init_sigma if self.blur_fade_kimg > 0 else 0
-        
+        print("word_label: ", word_label)
         # Gmain: Maximize logits for generated images.
         if phase in ['Gmain', 'Gboth']:
             with torch.autograd.profiler.record_function('Gmain_forward'):
@@ -114,7 +114,7 @@ class StyleGAN2Loss(Loss):
                 loss_rec = torch.nn.functional.l1_loss(gen_img, real_img_rec)
                 print("loss_cyc: ", loss_cyc)
                 print("loss_rec: ", loss_rec)
-                call_OCR(gen_img, real_img.shape[0])
+                call_OCR(gen_Mask, real_img.shape[0])
                 gen_logits = self.run_D(gen_img, gen_c, blur_sigma=blur_sigma)
                 training_stats.report('Loss/scores/fake', gen_logits)
                 training_stats.report('Loss/signs/fake', gen_logits.sign())
@@ -132,7 +132,7 @@ class StyleGAN2Loss(Loss):
                 cyc_img = cyc_img.to(self.device)
                 gen_img_2, _gen_ws_2, gen_Mask_2 = self.run_G(bounding_box[:batch_size], cyc_img, real_text[:batch_size], gen_c)
                 loss_cyc = torch.nn.functional.l1_loss(gen_img_2, real_img_rec[:batch_size])
-                call_OCR(gen_img, batch_size)
+                call_OCR(gen_Mask, batch_size)
                 loss_rec = torch.nn.functional.l1_loss(gen_img, real_img_rec[:batch_size])
                 print("loss_cyc: ", loss_cyc)
                 print("loss_rec: ", loss_rec)
@@ -154,7 +154,7 @@ class StyleGAN2Loss(Loss):
         if phase in ['Dmain', 'Dboth']:
             with torch.autograd.profiler.record_function('Dgen_forward'):
                 gen_img, _gen_ws, gen_Mask = self.run_G(bounding_box, real_img, real_text, gen_c, update_emas=True)
-                call_OCR(gen_img, real_img.shape[0])
+                #call_OCR(gen_img, real_img.shape[0])
                 gen_logits = self.run_D(gen_img, gen_c, blur_sigma=blur_sigma, update_emas=True)
                 training_stats.report('Loss/scores/fake', gen_logits)
                 training_stats.report('Loss/signs/fake', gen_logits.sign())
