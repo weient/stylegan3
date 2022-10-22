@@ -23,6 +23,7 @@ from PIL import Image
 from IPython.display import Image
 import sys
 from torch.nn.functional import cross_entropy
+from typeloss_test import *
 #----------------------------------------------------------------------------
 
 class Loss:
@@ -140,6 +141,9 @@ class StyleGAN2Loss(Loss):
                 loss_cyc = torch.nn.functional.l1_loss(gen_img_2, real_img_rec)
                 loss_rec = torch.nn.functional.l1_loss(gen_img, real_img_rec)
                 loss_R = call_OCR(gen_Mask, real_img.shape[0], word_label)
+                loss_type = call_type(gen_img, real_img_rec)
+                
+                
                 print("loss_cyc: ", loss_cyc)
                 print("loss_rec: ", loss_rec)
                 print("loss_R: ", loss_R)
