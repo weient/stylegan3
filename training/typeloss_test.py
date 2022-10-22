@@ -33,7 +33,7 @@ def call_type(in_img, in_real):
     net = net.to(device)
 
     checkpoint = torch.load('/content/drive/Shareddrives/styleGAN3/ckpt.pth')
-    net.load_state_dict(checkpoint['net'])
+    net.load_state_dict(checkpoint['net'], False)
     best_acc = checkpoint['acc']
     train_epoch = checkpoint['epoch']
     print("model acc: ", best_acc)
