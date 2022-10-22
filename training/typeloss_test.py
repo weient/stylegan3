@@ -31,6 +31,8 @@ def call_type(in_img, in_real):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     net = ResNet34()
     net = net.to(device)
+    if device == 'cuda':
+        net = torch.nn.DataParallel(net)
 
     checkpoint = torch.load('/content/drive/Shareddrives/styleGAN3/ckpt.pth')
     net.load_state_dict(checkpoint['net'], False)
