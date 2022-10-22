@@ -23,7 +23,7 @@ from PIL import Image
 from IPython.display import Image
 import sys
 from torch.nn.functional import cross_entropy
-from typeloss_test import *
+from .typeloss_test import *
 #----------------------------------------------------------------------------
 
 class Loss:

@@ -9,7 +9,7 @@ import torchvision.transforms as transforms
 from torchvision.datasets import ImageFolder
 
 
-from resnet import *
+from .resnet import *
 
 
 def loss_per(img, real):
