@@ -49,7 +49,7 @@ def call_OCR(img_tensor, batch_size, word_label):
     "output_channel": 512, "hidden_size":256, "num_gpu":torch.cuda.device_count()}
     opt = argparse.Namespace(**dic)
     str_list = demo(opt)
-    print("OCR str_list: ", str_list)
+    #print("OCR str_list: ", str_list)
     input_l = []
     target_l = []
     max_length = 15
@@ -60,7 +60,7 @@ def call_OCR(img_tensor, batch_size, word_label):
         target_l.append(target)
     input = torch.cat(input_l, 0)
     target = torch.cat(target_l, 0)
-    print("input:", input.size(), "target: ", target.size())
+    #print("input:", input.size(), "target: ", target.size())
     return cross_entropy(input, target)
 
 

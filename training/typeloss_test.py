@@ -57,8 +57,8 @@ def call_type(in_img, in_real):
     net.load_state_dict(checkpoint['net'], False)
     best_acc = checkpoint['acc']
     train_epoch = checkpoint['epoch']
-    print("model acc: ", best_acc)
-    print("model #iter: ", train_epoch)
+    #print("model acc: ", best_acc)
+    #print("model #iter: ", train_epoch)
 
     in_img.to(device)
     in_real.to(device)
@@ -67,9 +67,9 @@ def call_type(in_img, in_real):
     per = loss_per(maps, maps_real)
     tex = loss_text(maps, maps_real)
     emb = loss_emb(maps, maps_real)
-    print("per: ", per)
-    print("tex: ", tex)
-    print("emb: ", emb)
+    #print("per: ", per)
+    #print("tex: ", tex)
+    #print("emb: ", emb)
     return per + 500*tex + emb
     
 
