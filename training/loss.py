@@ -134,7 +134,6 @@ class StyleGAN2Loss(Loss):
             with torch.autograd.profiler.record_function('Gmain_forward'):
                 gen_img, _gen_ws, gen_Mask = self.run_G(bounding_box, real_img, real_text, gen_c)
                 gen_Mask = torch.cat((gen_Mask, gen_Mask, gen_Mask), 1)
-                print("mask shape: ", gen_Mask.size())
                 cyc_img = paste_img(real_img, gen_img, real_img.shape[0])
                 cyc_img = cyc_img.to(self.device)
                 gen_img_2, _gen_ws_2, gen_Mask_2 = self.run_G(bounding_box, cyc_img, real_text, gen_c)
@@ -142,8 +141,7 @@ class StyleGAN2Loss(Loss):
                 loss_rec = torch.nn.functional.l1_loss(gen_img, real_img_rec)
                 loss_R = call_OCR(gen_Mask, real_img.shape[0], word_label)
                 loss_type = call_type(gen_img, real_img_rec)
-                
-                
+                print("loss_type: ", loss_type)
                 print("loss_cyc: ", loss_cyc)
                 print("loss_rec: ", loss_rec)
                 print("loss_R: ", loss_R)
@@ -167,9 +165,11 @@ class StyleGAN2Loss(Loss):
                 loss_cyc = torch.nn.functional.l1_loss(gen_img_2, real_img_rec[:batch_size])
                 loss_R = call_OCR(gen_Mask, batch_size, word_label)
                 loss_rec = torch.nn.functional.l1_loss(gen_img, real_img_rec[:batch_size])
+                loss_type = call_type(gen_img, real_img_rec[:batch_size])
                 print("loss_cyc: ", loss_cyc)
                 print("loss_rec: ", loss_rec)
                 print("loss_R: ", loss_R)
+                print("loss_type: ", loss_type)
                 pl_noise = torch.randn_like(gen_img) / np.sqrt(gen_img.shape[2] * gen_img.shape[3])
                 with torch.autograd.profiler.record_function('pl_grads'), conv2d_gradfix.no_weight_gradients(self.pl_no_weight_grad):
                     pl_grads = torch.autograd.grad(outputs=[(gen_img * pl_noise).sum()], inputs=[gen_ws], create_graph=True, only_inputs=True)[0]
