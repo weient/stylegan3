@@ -67,7 +67,9 @@ def call_type(in_img, in_real):
     per = loss_per(maps, maps_real)
     tex = loss_text(maps, maps_real)
     emb = loss_emb(maps, maps_real)
-
+    print("per: ", per)
+    print("tex: ", tex)
+    print("emb: ", emb)
     return per + 500*tex + emb
     
 
