@@ -132,7 +132,7 @@ class StyleGAN2Loss(Loss):
         # Gmain: Maximize logits for generated images.
         
         dif_text = torch.flip(real_text, [0])
-        dif_word_label = word_label.reverse()
+        dif_word_label = list(reversed(word_label))
         print(dif_word_label)
         if phase in ['Gmain', 'Gboth']:
             with torch.autograd.profiler.record_function('Gmain_forward'):
