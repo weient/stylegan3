@@ -141,6 +141,7 @@ class StyleGAN2Loss(Loss):
                 cyc_img = cyc_img.to(self.device)
                 gen_img_2, _gen_ws_2, gen_Mask_2 = self.run_G(bounding_box, cyc_img, real_text, gen_c)
                 gen_img_dif, _, gen_Mask_dif = self.run_G(bounding_box, real_img, dif_text, gen_c)
+                gen_Mask_dif = torch.cat((gen_Mask_dif, gen_Mask_dif, gen_Mask_dif), 1)
                 loss_R_dif = call_OCR(gen_Mask_dif, real_img.shape[0], dif_word_label)
                 loss_cyc = torch.nn.functional.l1_loss(gen_img_2, real_img_rec)
                 loss_rec = torch.nn.functional.l1_loss(gen_img, real_img_rec)
