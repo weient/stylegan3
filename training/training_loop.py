@@ -348,6 +348,7 @@ def training_loop(
             for box, real_img, real_img_rec, real_text, gen_z in zip(phase_box, phase_real_img, phase_real_rec, phase_real_text, phase_gen_z):
                 #print("phase_real_img size:", phase_real_img.size())
                 loss.accumulate_gradients(bounding_box=box, phase=phase.name, real_img=real_img, real_img_rec=real_img_rec, real_text = real_text, word_label = phase_word, real_c=None, gen_z=gen_z, gen_c=None, gain=phase.interval, cur_nimg=cur_nimg)
+                print("word label: ", phase_word)
             phase.module.requires_grad_(False)
 
             # Update weights.

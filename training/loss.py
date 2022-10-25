@@ -133,7 +133,6 @@ class StyleGAN2Loss(Loss):
         
         dif_text = torch.flip(real_text, [0])
         dif_word_label = list(reversed(word_label))
-        print(dif_word_label)
         if phase in ['Gmain', 'Gboth']:
             with torch.autograd.profiler.record_function('Gmain_forward'):
                 gen_img, _gen_ws, gen_Mask = self.run_G(bounding_box, real_img, real_text, gen_c)
