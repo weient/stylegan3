@@ -130,6 +130,9 @@ class StyleGAN2Loss(Loss):
         blur_sigma = max(1 - cur_nimg / (self.blur_fade_kimg * 1e3), 0) * self.blur_init_sigma if self.blur_fade_kimg > 0 else 0
         #print("word_label: ", word_label)
         # Gmain: Maximize logits for generated images.
+        
+        dif_text = torch.flip(real_text, [0])
+        dif_word_label = word_label.reverse()
         if phase in ['Gmain', 'Gboth']:
             with torch.autograd.profiler.record_function('Gmain_forward'):
                 gen_img, _gen_ws, gen_Mask = self.run_G(bounding_box, real_img, real_text, gen_c)
@@ -137,19 +140,22 @@ class StyleGAN2Loss(Loss):
                 cyc_img = paste_img(real_img, gen_img, real_img.shape[0])
                 cyc_img = cyc_img.to(self.device)
                 gen_img_2, _gen_ws_2, gen_Mask_2 = self.run_G(bounding_box, cyc_img, real_text, gen_c)
+                gen_img_dif, _, gen_Mask_dif = self.run_G(bounding_box, real_img, dif_text, gen_c)
+                loss_R_dif = call_OCR(gen_Mask_dif, real_img.shape[0], dif_word_label)
                 loss_cyc = torch.nn.functional.l1_loss(gen_img_2, real_img_rec)
                 loss_rec = torch.nn.functional.l1_loss(gen_img, real_img_rec)
                 loss_R = call_OCR(gen_Mask, real_img.shape[0], word_label)
                 loss_type = call_type(gen_img, real_img_rec)
+                final_R = (loss_R + loss_R_dif) / 2
                 print("loss_type: ", loss_type)
                 print("loss_cyc: ", loss_cyc)
                 print("loss_rec: ", loss_rec)
-                print("loss_R: ", loss_R)
+                print("loss_R: ", final_R)
                 gen_logits = self.run_D(gen_img, gen_c, blur_sigma=blur_sigma)
                 training_stats.report('Loss/scores/fake', gen_logits)
                 training_stats.report('Loss/signs/fake', gen_logits.sign())
                 loss_D = torch.nn.functional.softplus(-gen_logits) # -log(sigmoid(gen_logits))
-                loss_Gmain = 10*loss_rec + loss_cyc + loss_R + loss_type + loss_D
+                loss_Gmain = 10*loss_rec + loss_cyc + final_R + loss_type + loss_D
                 training_stats.report('Loss/G/loss', loss_Gmain)
             with torch.autograd.profiler.record_function('Gmain_backward'):
                 loss_Gmain.mean().mul(gain).backward()
