@@ -88,13 +88,28 @@ def save_image_grid(img, fname, drange, grid_size):
 
 #----------------------------------------------------------------------------
 
+def split_batch(imgset, batch_size):
+    all=[]
+    i=0
+    while True:
+        if i+batch_size >= len(imgset):
+            break
+        tmp = imgset[i:i+batch_size, :, :, :]
+        #print(tmp.shape)
+        all.append(tmp)
+        i += batch_size
+    
+    all = np.array(all)
+    #print(all.shape)
+
+    return all
+
 def training_loop(
     run_dir                 = '.',      # Output directory.
     rec_set_kwargs          = {},       # args for rectangle images
     square_set_kwargs       = {},       # args for square images
     text_set_kwargs         = {},       # args for text images
     bounding_box_path       = {},
-    data_loader_kwargs      = {},       # Options for torch.utils.data.DataLoader.
     G_kwargs                = {},       # Options for generator network.
     D_kwargs                = {},       # Options for discriminator network.
     G_opt_kwargs            = {},       # Options for generator optimizer.
@@ -117,7 +132,6 @@ def training_loop(
     ada_kimg                = 500,      # ADA adjustment speed, measured in how many kimg it takes for p to increase/decrease by one unit.
     total_kimg              = 25000,    # Total length of the training, measured in thousands of real images.
     kimg_per_tick           = 4,        # Progress snapshot interval.
-    image_snapshot_ticks    = 50,       # How often to save image snapshots? None = disable.
     network_snapshot_ticks  = 50,       # How often to save network snapshots? None = disable.
     resume_pkl              = None,     # Network pickle to resume training from.
     resume_kimg             = 0,        # First kimg to report when resuming training.
@@ -146,7 +160,7 @@ def training_loop(
     buf_str = []
     cnt = 0
     for name in box_list:
-        if cnt==4 :
+        if cnt==batch_size :
             boxes.append(buf)
             strings.append(buf_str)
             buf_str = []
@@ -170,16 +184,18 @@ def training_loop(
     rec_set = np.load(rec_set_kwargs['path'])
     text_set = np.load(text_set_kwargs['path'])
 
+    square_set = split_batch(square_set, batch_size)
+    rec_set = split_batch(rec_set, batch_size)
+    text_set = split_batch(text_set, batch_size)
+
     square_set = torch.from_numpy(square_set)
     rec_set = torch.from_numpy(rec_set)
     text_set = torch.from_numpy(text_set)
-    
 
     print("square set shape: ", square_set.size())
     print("rec set shape: ", rec_set.size())
     print("text set shape: ", text_set.size())
     
-
     square_set_iterator = iter(square_set)
     rec_set_iterator = iter(rec_set)
     text_set_iterator = iter(text_set)
@@ -323,7 +339,7 @@ def training_loop(
             phase_real_text = (phase_real_text.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
             phase_real_rec = (phase_real_rec.to(device).to(torch.float32) / 127.5 - 1).split(batch_gpu)
             phase_box = (phase_box.to(device).to(torch.float32)).split(batch_gpu)
-            #phase_word = (phase_word).split(batch_gpu)
+            
 
             all_gen_z = torch.randn([len(phases) * batch_size, G.z_dim], device=device)
             all_gen_z = [phase_gen_z.split(batch_gpu) for phase_gen_z in all_gen_z.split(batch_size)]
@@ -332,7 +348,7 @@ def training_loop(
             all_gen_c = torch.from_numpy(np.stack(all_gen_c)).pin_memory().to(device)
             all_gen_c = [phase_gen_c.split(batch_gpu) for phase_gen_c in all_gen_c.split(batch_size)]
             '''
-        #phase_box = next(box_iterator)
+        
         # Execute training phases.
         for phase, phase_gen_z in zip(phases, all_gen_z):
             if batch_idx % phase.interval != 0:
@@ -344,9 +360,8 @@ def training_loop(
             phase.opt.zero_grad(set_to_none=True)
             phase.module.requires_grad_(True)
             
-            #print("phase_real_img size:", phase_real_img.size())
+            
             for box, real_img, real_img_rec, real_text, gen_z in zip(phase_box, phase_real_img, phase_real_rec, phase_real_text, phase_gen_z):
-                #print("phase_real_img size:", phase_real_img.size())
                 loss.accumulate_gradients(bounding_box=box, phase=phase.name, real_img=real_img, real_img_rec=real_img_rec, real_text = real_text, word_label = phase_word, real_c=None, gen_z=gen_z, gen_c=None, gain=phase.interval, cur_nimg=cur_nimg)
                 print("word label: ", phase_word)
             phase.module.requires_grad_(False)

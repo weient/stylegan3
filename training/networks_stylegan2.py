@@ -29,10 +29,10 @@ def normalize_2nd_moment(x, dim=1, eps=1e-8):
     return x * (x.square().mean(dim=dim, keepdim=True) + eps).rsqrt()
 
 #----------------------------------------------------------------------------
+'''
 def merge_input(in_list):
     out = torch.cat(in_list, 3)
     return out
-
 
 def split_input(img_in):
     block_res = int(img_in.size(3)/4)
@@ -43,7 +43,7 @@ def split_input(img_in):
         block_list.append(cur_block)
         index += block_res
     return block_list
-
+'''
 #@misc.profiled_function
 def modulated_conv2d(
     x,                          # Input tensor of shape [batch_size, in_channels, in_height, in_width].
