@@ -473,7 +473,7 @@ def training_loop(
             if rank == 0:
                 with open(snapshot_pkl, 'wb') as f:
                     pickle.dump(snapshot_data, f)
-        del snapshot_data
+        #del snapshot_data
         # Evaluate metrics.
         
         if (snapshot_data is not None) and (len(metrics) > 0):
