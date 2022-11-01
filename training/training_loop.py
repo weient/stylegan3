@@ -184,16 +184,9 @@ def training_loop(
     rec_set = np.load(rec_set_kwargs['path'])
     text_set = np.load(text_set_kwargs['path'])
 
-    square_set = square_set[0:2, :, :, :, :]
-    rec_set = rec_set[0:2, :, :, :, :]
-    text_set = text_set[0:2, :, :, :, :]
-    boxes = boxes[0:2]
-    strings = strings[0:2]
-
-    
-    #square_set = split_batch(square_set, batch_size)
-    #rec_set = split_batch(rec_set, batch_size)
-    #text_set = split_batch(text_set, batch_size)
+    square_set = split_batch(square_set, batch_size)
+    rec_set = split_batch(rec_set, batch_size)
+    text_set = split_batch(text_set, batch_size)
 
     square_set = torch.from_numpy(square_set)
     rec_set = torch.from_numpy(rec_set)
