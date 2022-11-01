@@ -187,8 +187,8 @@ def training_loop(
     square_set = square_set[0:2, :, :, :, :]
     rec_set = rec_set[0:2, :, :, :, :]
     text_set = text_set[0:2, :, :, :, :]
-    boxes = boxes[0:2, :]
-    strings = strings[0:2, :]
+    boxes = boxes[0:2]
+    strings = strings[0:2]
 
     
     #square_set = split_batch(square_set, batch_size)
