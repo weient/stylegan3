@@ -184,6 +184,13 @@ def training_loop(
     rec_set = np.load(rec_set_kwargs['path'])
     text_set = np.load(text_set_kwargs['path'])
 
+    square_set = square_set[0:2, :, :, :, :]
+    rec_set = rec_set[0:2, :, :, :, :]
+    text_set = text_set[0:2, :, :, :, :]
+    boxes = boxes[0:2, :]
+    strings = strings[0:2, :]
+
+    
     #square_set = split_batch(square_set, batch_size)
     #rec_set = split_batch(rec_set, batch_size)
     #text_set = split_batch(text_set, batch_size)
@@ -196,6 +203,8 @@ def training_loop(
     print("square set shape: ", square_set.size())
     print("rec set shape: ", rec_set.size())
     print("text set shape: ", text_set.size())
+    print("boxes shape: ", (len(boxes), len(boxes[0])))
+    print("strings shape: ", (len(strings), len(strings[0])))
     
     square_set_iterator = iter(square_set)
     rec_set_iterator = iter(rec_set)
@@ -475,7 +484,7 @@ def training_loop(
                     pickle.dump(snapshot_data, f)
         #del snapshot_data
         # Evaluate metrics.
-        
+        '''
         if (snapshot_data is not None) and (len(metrics) > 0):
             if rank == 0:
                 print('Evaluating metrics...')
@@ -486,7 +495,7 @@ def training_loop(
                     metric_main.report_metric(result_dict, run_dir=run_dir, snapshot_pkl=snapshot_pkl)
                 stats_metrics.update(result_dict.results)
         del snapshot_data # conserve memory
-        
+        '''
         # Collect statistics.
         '''
         for phase in phases:
