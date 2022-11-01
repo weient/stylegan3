@@ -187,11 +187,12 @@ def training_loop(
     square_set = split_batch(square_set, batch_size)
     rec_set = split_batch(rec_set, batch_size)
     text_set = split_batch(text_set, batch_size)
-
+    
     square_set = torch.from_numpy(square_set)
     rec_set = torch.from_numpy(rec_set)
     text_set = torch.from_numpy(text_set)
 
+    num_of_batch = text_set.shape[0]
     print("square set shape: ", square_set.size())
     print("rec set shape: ", rec_set.size())
     print("text set shape: ", text_set.size())
@@ -322,10 +323,22 @@ def training_loop(
     batch_idx = 0
     if progress_fn is not None:
         progress_fn(0, total_kimg)
+    
+    count_batch = 0
     while True:
         
         # Fetch training data.
         with torch.autograd.profiler.record_function('data_fetch'):
+            if count_batch == num_of_batch:
+                count_batch = 0
+                square_set_iterator = iter(square_set)
+                rec_set_iterator = iter(rec_set)
+                text_set_iterator = iter(text_set)
+                box_iterator = iter(boxes)
+                word_iterator = iter(strings)
+            
+            count_batch += 1
+
             phase_real_c = None
             phase_real_img = next(square_set_iterator)
             phase_real_rec = next(rec_set_iterator)
